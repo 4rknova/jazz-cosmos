@@ -1,46 +1,12 @@
 import { useAccount, useIsAuthenticated } from "jazz-react";
-import { useState, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Environment } from "@react-three/drei";
+import { useState, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
 import Planet from "./components/Planet.tsx";
 import { AuthButton } from "./components/AuthButton.tsx";
 import { Logo } from "./components/Logo.tsx";
 import { CameraPosition } from "./schema.ts";
-
-// Camera controller component that can access the camera within the Canvas context
-function CameraController({ onCameraChange }: { onCameraChange: (position: { x: number; y: number; z: number }, isEndOfInteraction?: boolean) => void }) {
-  const { camera } = useThree();
-  const controlsRef = useRef(null);
-  
-  // Helper function to get current camera position
-  const getCurrentPosition = () => ({
-    x: camera.position.x,
-    y: camera.position.y,
-    z: camera.position.z
-  });
-  
-  // Track previous position to detect changes
-  const prevPosition = useRef(camera.position.clone());
-  
-  // Check camera position on each frame
-  useFrame(() => {
-    if (!camera.position.equals(prevPosition.current)) {
-      onCameraChange(getCurrentPosition());
-      prevPosition.current.copy(camera.position);
-    }
-  });
-  
-  return (
-    <OrbitControls 
-      ref={controlsRef}
-      enableZoom={true}
-      onEnd={() => {
-        // This fires when control interaction ends
-        onCameraChange(getCurrentPosition(), true);
-      }}
-    />
-  );
-}
+import { CameraController } from "./components/CameraController";
 
 function App() {
   const { me } = useAccount({ profile: {}, root: {} });
@@ -49,11 +15,11 @@ function App() {
   const [cameraPosition, setCameraPosition] = useState({ x: 5, y: 2, z: 5 });
 
   useEffect(() => { 
-    if (me?.profile?.cameraPosition) {
+    if (me?.root?.cameraPosition) {
       setCameraPosition({
-        x: me.profile.cameraPosition.x,
-        y: me.profile.cameraPosition.y,
-        z: me.profile.cameraPosition.z
+        x: me.root.cameraPosition.x,
+        y: me.root.cameraPosition.y,
+        z: me.root.cameraPosition.z
       });
     }
   }, [me]);
@@ -63,22 +29,22 @@ function App() {
     setCameraPosition(newPosition);
     
     // Only save to account if authenticated and at the end of interaction
-    if (isEndOfInteraction && isAuthenticated && me?.profile) {
+    if (isEndOfInteraction && isAuthenticated && me?.root) {
       savePositionToAccount(newPosition);
     }
   };
   
   // Function to save position to account
   const savePositionToAccount = (position: { x: number; y: number; z: number }) => {
-    if (!isAuthenticated || !me?.profile) return;
+    if (!isAuthenticated || !me?.root) return;
     
     try {
       // If cameraPosition doesn't exist yet, create it
-      if (!me.profile.cameraPosition) {
-        me.profile.cameraPosition = CameraPosition.create(position);
+      if (!me.root.cameraPosition) {
+        me.root.cameraPosition = CameraPosition.create(position);
       } else {
         // Update existing camera position
-        Object.assign(me.profile.cameraPosition, position);
+        Object.assign(me.root.cameraPosition, position);
       }
     } catch (error) {
       console.error('Error saving camera position:', error);

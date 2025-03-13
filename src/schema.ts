@@ -7,10 +7,11 @@ export class CameraPosition extends CoMap {
 }
 export class JazzProfile extends Profile {
   name = co.string;
-  cameraPosition = co.ref(CameraPosition);
 }
 
-export class AccountRoot extends CoMap {}
+export class AccountRoot extends CoMap {
+  cameraPosition = co.ref(CameraPosition);
+}
 
 export class JazzAccount extends Account {
   profile = co.ref(JazzProfile);
@@ -19,8 +20,11 @@ export class JazzAccount extends Account {
   migrate(this: JazzAccount) {
     if (this.root === undefined) {
       const group = Group.create();
-
-      this.root = AccountRoot.create({}, group);
+      
+      // Create with default camera position
+      this.root = AccountRoot.create({
+        cameraPosition: CameraPosition.create({ x: 5, y: 2, z: 5 })
+      }, group);
     }
   }
 }
