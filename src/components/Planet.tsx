@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useRef, useState, useEffect, useCallback } from "react";
+import type React from "react";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { Mesh, BufferGeometry, Raycaster, Vector2, Vector3, Color } from "three";
+import { type Mesh, type BufferGeometry, Raycaster, Vector2, Vector3, Color } from "three";
 
 interface PlanetProps {
   showWireframe: boolean;
@@ -22,10 +23,10 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
       setHeights(new Float32Array(vertexCount).fill(0)); // Store height values separately
     }
     updateColors(); // Ensure colors are set initially
-  }, []);
+  }, [heights]);
 
   // Handle Click to Modify Terrain
-  const handleClick = (event: MouseEvent) => {
+  const handleClick = useCallback((event: MouseEvent) => {
     if (!meshRef.current || !heights) return;
 
     const raycaster = new Raycaster();
@@ -56,7 +57,7 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
       updateGeometry();
       updateColors();
     }
-  };
+  }, [heights, gl, camera]);
 
   // Modify Height of a Specific Vertex
   const modifyHeight = (index: number, delta: number) => {
@@ -139,7 +140,9 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
     const midBC = new Vector3().lerpVectors(vB, vC, 0.5);
     const midCA = new Vector3().lerpVectors(vC, vA, 0.5);
 
-    [midAB, midBC, midCA].forEach((v) => v.normalize().multiplyScalar(2));
+    for (const v of [midAB, midBC, midCA]) {
+      v.normalize().multiplyScalar(2);
+    }
 
     geometry.setAttribute(
       "position",
@@ -153,7 +156,7 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
   useEffect(() => {
     gl.domElement.addEventListener("click", handleClick);
     return () => gl.domElement.removeEventListener("click", handleClick);
-  }, [heights]);
+  }, [gl, handleClick]);
 
   return (
     <group>
@@ -173,4 +176,3 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
 };
 
 export default Planet;
-
