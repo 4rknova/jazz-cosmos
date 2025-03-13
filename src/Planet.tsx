@@ -1,35 +1,58 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { Mesh, BufferGeometry, Raycaster, Vector2, Vector3, Color } from "three";
 
 interface PlanetProps {
+  disableEditing: boolean;
   showWireframe: boolean;
 }
 
-const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
-  const meshRef = useRef<Mesh>(null);
-  const wireframeRef = useRef<Mesh>(null);
+const Planet: React.FC<PlanetProps> = ({ disableEditing, showWireframe }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const wireframeRef = useRef<THREE.Mesh>(null);
   const { camera, gl } = useThree();
   const [heights, setHeights] = useState<Float32Array | null>(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   useEffect(() => {
-    if (!meshRef.current) return;
-    const geometry = meshRef.current.geometry as BufferGeometry;
-    const vertexCount = geometry.attributes.position.count;
+    if (!meshRef.current || !meshRef.current.geometry) return;
+
+    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
+    const vertexCount = geometry.attributes.position?.count;
+
+    if (!vertexCount) return;
 
     if (!heights) {
-      setHeights(new Float32Array(vertexCount).fill(0)); // Store height values separately
+      setHeights(new Float32Array(vertexCount).fill(0));
     }
-    updateColors(); // Ensure colors are set initially
+
+    updateColors(); // ✅ Ensure colors initialize properly
   }, []);
 
-  // Handle Click to Modify Terrain
-  const handleClick = (event: MouseEvent) => {
+  // Start modifying terrain when mouse is pressed
+  const handleMouseDown = (event: MouseEvent) => {
+    if (disableEditing) return;
+    setIsMouseDown(true);
+    modifyTerrain(event);
+  };
+
+  // Stop modifying terrain when mouse is released
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+  };
+
+  // Modify terrain continuously while moving mouse
+  const handleMouseMove = (event: MouseEvent) => {
+    if (!isMouseDown || disableEditing) return;
+    modifyTerrain(event);
+  };
+
+  // Modify Terrain Based on Mouse Position
+  const modifyTerrain = (event: MouseEvent) => {
     if (!meshRef.current || !heights) return;
 
-    const raycaster = new Raycaster();
-    const mouse = new Vector2();
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
     const rect = gl.domElement.getBoundingClientRect();
 
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -44,16 +67,12 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
       if (!face) return;
 
       const modifier = event.shiftKey ? -0.05 : 0.05;
-
-      if (shouldSubdivide(hit.point, face)) {
-        subdivideFace(face);
-      }
-
       modifyHeight(face.a, modifier);
       modifyHeight(face.b, modifier * 0.8);
       modifyHeight(face.c, modifier * 0.8);
 
       updateGeometry();
+      updateWireframe();
       updateColors();
     }
   };
@@ -67,12 +86,12 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
   // Update Geometry Based on Heightmap
   const updateGeometry = () => {
     if (!meshRef.current || !heights) return;
-    const geometry = meshRef.current.geometry as BufferGeometry;
+    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
     const position = geometry.attributes.position.array as Float32Array;
 
     for (let i = 0; i < heights.length; i++) {
       const idx = i * 3;
-      const normal = new Vector3(position[idx], position[idx + 1], position[idx + 2]).normalize();
+      const normal = new THREE.Vector3(position[idx], position[idx + 1], position[idx + 2]).normalize();
       position[idx] = normal.x * (2 + heights[i]);
       position[idx + 1] = normal.y * (2 + heights[i]);
       position[idx + 2] = normal.z * (2 + heights[i]);
@@ -82,16 +101,16 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
     geometry.computeVertexNormals();
   };
 
-  // Update Colors Based on Elevation
+  // ✅ Update Colors Based on Elevation
   const updateColors = () => {
     if (!meshRef.current || !heights) return;
-    const geometry = meshRef.current.geometry as BufferGeometry;
+    const geometry = meshRef.current.geometry as THREE.BufferGeometry;
     const position = geometry.attributes.position.array as Float32Array;
     const colors = new Float32Array(position.length);
 
     for (let i = 0; i < heights.length; i++) {
       const height = heights[i];
-      const color = new Color();
+      const color = new THREE.Color();
 
       if (height < -0.02) {
         color.setRGB(0, 0, 1); // Water (Blue)
@@ -113,58 +132,41 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
     geometry.attributes.color.needsUpdate = true;
   };
 
-  // Check if Triangle Needs Subdivision
-  const shouldSubdivide = (point: THREE.Vector3, face: THREE.Face) => {
-    const geometry = meshRef.current?.geometry as BufferGeometry;
-    const position = geometry.attributes.position.array as Float32Array;
+  // ✅ Update Wireframe Grid to Match Terrain Changes
+  const updateWireframe = () => {
+    if (!meshRef.current || !wireframeRef.current) return;
 
-    const vA = new Vector3(position[face.a * 3], position[face.a * 3 + 1], position[face.a * 3 + 2]);
-    const vB = new Vector3(position[face.b * 3], position[face.b * 3 + 1], position[face.b * 3 + 2]);
-    const vC = new Vector3(position[face.c * 3], position[face.c * 3 + 1], position[face.c * 3 + 2]);
+    if (wireframeRef.current.geometry) {
+      wireframeRef.current.geometry.dispose();
+    }
 
-    const maxEdge = Math.max(vA.distanceTo(vB), vB.distanceTo(vC), vC.distanceTo(vA));
-    return maxEdge > 0.2; // Subdivide if edge is larger than threshold
-  };
-
-  // Subdivide a Face into Smaller Triangles
-  const subdivideFace = (face: THREE.Face) => {
-    const geometry = meshRef.current?.geometry as BufferGeometry;
-    const position = geometry.attributes.position.array as Float32Array;
-
-    const vA = new Vector3(position[face.a * 3], position[face.a * 3 + 1], position[face.a * 3 + 2]);
-    const vB = new Vector3(position[face.b * 3], position[face.b * 3 + 1], position[face.b * 3 + 2]);
-    const vC = new Vector3(position[face.c * 3], position[face.c * 3 + 1], position[face.c * 3 + 2]);
-
-    const midAB = new Vector3().lerpVectors(vA, vB, 0.5);
-    const midBC = new Vector3().lerpVectors(vB, vC, 0.5);
-    const midCA = new Vector3().lerpVectors(vC, vA, 0.5);
-
-    [midAB, midBC, midCA].forEach((v) => v.normalize().multiplyScalar(2));
-
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute([...position, ...midAB.toArray(), ...midBC.toArray(), ...midCA.toArray()], 3)
-    );
-
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeVertexNormals();
+    wireframeRef.current.geometry = new THREE.WireframeGeometry(meshRef.current.geometry);
   };
 
   useEffect(() => {
-    gl.domElement.addEventListener("click", handleClick);
-    return () => gl.domElement.removeEventListener("click", handleClick);
-  }, [heights]);
+    gl.domElement.addEventListener("mousedown", handleMouseDown);
+    gl.domElement.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      gl.domElement.removeEventListener("mousedown", handleMouseDown);
+      gl.domElement.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [heights, disableEditing]);
 
   return (
     <group>
-      <mesh ref={meshRef}>
+      {/* Main Planet */}
+      <mesh ref={meshRef} castShadow receiveShadow>
         <sphereGeometry args={[2, 64, 64]} />
         <meshStandardMaterial vertexColors={true} />
       </mesh>
 
+      {/* ✅ Wireframe Toggle */}
       {showWireframe && (
         <mesh ref={wireframeRef} scale={1.002}>
-          <sphereGeometry args={[2, 64, 64]} />
+          <wireframeGeometry attach="geometry" args={[meshRef.current?.geometry]} />
           <meshBasicMaterial color="white" wireframe />
         </mesh>
       )}
@@ -173,4 +175,3 @@ const Planet: React.FC<PlanetProps> = ({ showWireframe }) => {
 };
 
 export default Planet;
-
