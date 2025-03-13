@@ -3,7 +3,6 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import Planet from "./Planet";
 import { AuthButton } from "./AuthButton.tsx";
-import { Logo } from "./Logo.tsx";
 
 function App() {
   const { me } = useAccount({ profile: {}, root: {} });
@@ -15,13 +14,12 @@ function App() {
       <header>
         <nav className="container flex justify-between items-center py-3">
           {isAuthenticated ? (
-            <span>You're logged in.</span>
+            <span>Welcome back, { me?.profile.name }</span>
           ) : (
             <span>Authenticate to share the data with another device.</span>
           )}
           <AuthButton />
         </nav>
-        <Logo />
       </header>
       <main className="w-full h-dvh bg-black">
         
