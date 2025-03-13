@@ -8,9 +8,16 @@ import { Logo } from "./components/Logo.tsx";
 import { CameraPosition } from "./schema.ts";
 
 // Camera controller component that can access the camera within the Canvas context
-function CameraController({ onCameraChange }: { onCameraChange: (position: { x: number; y: number; z: number }) => void }) {
+function CameraController({ onCameraChange }: { onCameraChange: (position: { x: number; y: number; z: number }, isEndOfInteraction?: boolean) => void }) {
   const { camera } = useThree();
   const controlsRef = useRef(null);
+  
+  // Helper function to get current camera position
+  const getCurrentPosition = () => ({
+    x: camera.position.x,
+    y: camera.position.y,
+    z: camera.position.z
+  });
   
   // Track previous position to detect changes
   const prevPosition = useRef(camera.position.clone());
@@ -18,12 +25,7 @@ function CameraController({ onCameraChange }: { onCameraChange: (position: { x: 
   // Check camera position on each frame
   useFrame(() => {
     if (!camera.position.equals(prevPosition.current)) {
-      const position = {
-        x: camera.position.x,
-        y: camera.position.y,
-        z: camera.position.z
-      };
-      onCameraChange(position);
+      onCameraChange(getCurrentPosition());
       prevPosition.current.copy(camera.position);
     }
   });
@@ -32,24 +34,9 @@ function CameraController({ onCameraChange }: { onCameraChange: (position: { x: 
     <OrbitControls 
       ref={controlsRef}
       enableZoom={true}
-      onChange={() => {
-        // This fires during control interaction
-        const position = {
-          x: camera.position.x,
-          y: camera.position.y,
-          z: camera.position.z
-        };
-        onCameraChange(position);
-      }}
       onEnd={() => {
         // This fires when control interaction ends
-        const position = {
-          x: camera.position.x,
-          y: camera.position.y,
-          z: camera.position.z
-        };
-        onCameraChange(position);
-        console.log("Controls ended, final camera position:", position);
+        onCameraChange(getCurrentPosition(), true);
       }}
     />
   );
@@ -63,7 +50,6 @@ function App() {
 
   useEffect(() => { 
     if (me?.profile?.cameraPosition) {
-      console.log('setting camera position', me.profile.cameraPosition)
       setCameraPosition({
         x: me.profile.cameraPosition.x,
         y: me.profile.cameraPosition.y,
@@ -72,44 +58,27 @@ function App() {
     }
   }, [me]);
 
-  // Handle camera position changes and save to account
-  const handleCameraChange = (newPosition: { x: number; y: number; z: number }) => {
+  // Handle camera position changes
+  const handleCameraChange = (newPosition: { x: number; y: number; z: number }, isEndOfInteraction = false) => {
     setCameraPosition(newPosition);
     
-    // Only save to account if authenticated
-    if (isAuthenticated && me?.profile) {
-      // Throttle updates to avoid excessive writes
-      if (!handleCameraChange.timeout) {
-        handleCameraChange.timeout = setTimeout(() => {
-          savePositionToAccount(newPosition);
-          handleCameraChange.timeout = null;
-        }, 500); // Wait 500ms before saving
-      }
+    // Only save to account if authenticated and at the end of interaction
+    if (isEndOfInteraction && isAuthenticated && me?.profile) {
+      savePositionToAccount(newPosition);
     }
   };
-  
-  // Add a timeout property to the function
-  handleCameraChange.timeout = null as any;
   
   // Function to save position to account
   const savePositionToAccount = (position: { x: number; y: number; z: number }) => {
     if (!isAuthenticated || !me?.profile) return;
     
-    console.log('Saving camera position to account:', position);
-    
     try {
       // If cameraPosition doesn't exist yet, create it
       if (!me.profile.cameraPosition) {
-        me.profile.cameraPosition = CameraPosition.create({
-          x: position.x,
-          y: position.y,
-          z: position.z
-        });
+        me.profile.cameraPosition = CameraPosition.create(position);
       } else {
         // Update existing camera position
-        me.profile.cameraPosition.x = position.x;
-        me.profile.cameraPosition.y = position.y;
-        me.profile.cameraPosition.z = position.z;
+        Object.assign(me.profile.cameraPosition, position);
       }
     } catch (error) {
       console.error('Error saving camera position:', error);
@@ -157,7 +126,6 @@ function App() {
           <p>X: {cameraPosition.x.toFixed(2)}</p>
           <p>Y: {cameraPosition.y.toFixed(2)}</p>
           <p>Z: {cameraPosition.z.toFixed(2)}</p>
-          {isAuthenticated && <p className="text-xs mt-1 text-green-400">Position saved to account</p>}
         </div>
       </main>
     </>
