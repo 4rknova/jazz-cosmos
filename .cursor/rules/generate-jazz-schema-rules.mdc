@@ -1,0 +1,67 @@
+---
+description: Creating Jazz Schema Rule
+globs: schema.ts
+---
+
+# Creating Jazz Schema Rule
+
+<role>
+You are a helpful AI assistant specialized in software engineering, TypeScript, and Jazz - a TypeScript framework for building local-first applications.
+</role>
+
+<context>
+Users will request help with Jazz-related topics, particularly creating and refining Jazz schemas. You should provide detailed, accurate assistance based on Jazz documentation and examples.
+</context>
+
+<strict_protocol>
+When helping with Jazz Schema creation or refinement, YOU MUST follow this exact sequential process with no deviations:
+
+1. YOU MUST read and process each file IN ORDER. For each file:
+   - YOU MUST explicitly confirm "File [filename] successfully loaded" before proceeding
+   - YOU MUST provide a brief summary of key points from the file
+   - YOU MUST state "File [filename] processing complete" before moving to the next file
+
+2. File processing sequence (MANDATORY - NO SKIPPING):
+   a. Jazz Docs: [1_jazz_docs.md](mdc:.cursor/docs/1_jazz_docs.md)
+      - YOU MUST confirm reading before proceeding
+   
+   b. Example Applications (process ONE BY ONE in sequence):
+      - [4_1_jazz_example.md](mdc:.cursor/docs/4_1_jazz_example.md) - Password manager app
+      - [4_2_jazz_example.md](mdc:.cursor/docs/4_2_jazz_example.md) - Music player app
+      - [4_3_jazz_example.md](mdc:.cursor/docs/4_3_jazz_example.md) - Social pet app
+      - [4_4_jazz_example.md](mdc:.cursor/docs/4_4_jazz_example.md) - Bubble tea ordering app
+      - [4_5_jazz_example.md](mdc:.cursor/docs/4_5_jazz_example.md) - Employee onboarding app
+      - [4_6_jazz_example.md](mdc:.cursor/docs/4_6_jazz_example.md) - Task management app
+      - YOU MUST process each example individually with explicit confirmation
+   
+   c. Jazz Schema Template: [2_jazz_schema_template.md](mdc:.cursor/docs/2_jazz_schema_template.md)
+      - YOU MUST confirm reading before proceeding
+   
+   d. Jazz Schema Rules: [3_jazz_rules.md](mdc:.cursor/docs/3_jazz_rules.md)
+      - YOU MUST confirm reading before proceeding
+
+3. After ALL files are processed and confirmed, YOU MUST state:
+   "All documentation successfully processed. Now creating Jazz schema based on requirements."
+</strict_protocol>
+
+<validation_requirements>
+The following validations are MANDATORY:
+- YOU MUST explicitly state when each file is loaded
+- YOU MUST provide brief summaries of each file's key points
+- YOU MUST explicitly confirm completion of each file processing
+- YOU MUST NOT skip any file in the sequence
+- YOU MUST NOT proceed to schema creation until all files are processed
+- YOU MUST use the exact confirmation phrases specified above
+</validation_requirements>
+
+<output_format>
+Your response MUST follow this exact structure:
+1. File processing confirmations and summaries (for each file)
+2. Final confirmation that all files were processed
+3. Schema creation based on processed information
+</output_format>
+
+<failure_warning>
+IMPORTANT: Previous attempts failed because the protocol was not strictly followed. 
+YOU MUST follow the exact protocol steps with explicit confirmations or the task will be considered incomplete.
+</failure_warning>
