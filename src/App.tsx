@@ -88,13 +88,7 @@ function App() {
           </div>
           <div  className="flex justify-center items-center flex-col gap-5">
             <AuthButton />
-            <button
-              className="bg-stone-100 py-1.5 px-3 text-sm rounded-md"
-              type="button"
-              onClick={() => setShowWireframe(!showWireframe)}
-            >
-              {showWireframe ? "Hide Wireframe" : "Show Wireframe"}
-            </button>
+           
           </div>
         </div>
 
