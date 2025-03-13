@@ -1,6 +1,8 @@
 import { useAccount, useIsAuthenticated } from "jazz-react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import Planet from "./Planet";
 import { AuthButton } from "./AuthButton.tsx";
-import { Form } from "./Form.tsx";
 import { Logo } from "./Logo.tsx";
 
 function App() {
@@ -19,49 +21,16 @@ function App() {
           )}
           <AuthButton />
         </nav>
-      </header>
-      <main className="container mt-16 flex flex-col gap-8">
         <Logo />
-
-        <div className="text-center">
-          <h1>
-            Welcome{me?.profile.firstName ? <>, {me?.profile.firstName}</> : ""}
-            !
-          </h1>
-          {!!me?.root.age && (
-            <p>As of today, you are {me.root.age} years old.</p>
-          )}
-        </div>
-
-        <Form />
-
-        <p className="text-center">
-          Edit the form above,{" "}
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="font-semibold underline"
-          >
-            refresh
-          </button>{" "}
-          this page, and see your changes persist.
-        </p>
-
-        <p className="text-center">
-          Edit <code className="font-semibold">schema.ts</code> to add more
-          fields.
-        </p>
-
-        <p className="text-center my-16">
-          Go to{" "}
-          <a
-            className="font-semibold underline"
-            href="https://jazz.tools/docs/react/guide"
-          >
-            jazz.tools/docs/react/guide
-          </a>{" "}
-          for a full tutorial.
-        </p>
+      </header>
+      <main className="w-full h-dvh bg-black">
+        
+        <Canvas camera={{ position: [5, 2, 5] }}>
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[5, 5, 5]} intensity={1} />
+          <Planet textureUrl="../resources/2k_mercury.jpg"/>
+          <OrbitControls enableZoom={true} />
+        </Canvas>
       </main>
     </>
   );
