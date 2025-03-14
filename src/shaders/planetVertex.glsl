@@ -25,6 +25,7 @@ void main() {
     vec3 pos = distorted(position); 
 
     vec3 n = normal;
+    /*
     vec3 distortedPosition = pos;
     vec3 tangent1 = orthogonal(n);
     vec3 tangent2 = normalize(cross(n, tangent1));
@@ -33,6 +34,8 @@ void main() {
     vec3 distorted1 = distorted(nearby1);
     vec3 distorted2 = distorted(nearby2);
     vNormal = normalize(cross(distorted1 - distortedPosition, distorted2 - distortedPosition));
+    */
+    vNormal = normal;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }

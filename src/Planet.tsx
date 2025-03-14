@@ -1,6 +1,6 @@
 import type React from "react";
 import { useRef, useState, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, Vector3 } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
 import * as THREE from "three";
 import planetVertexShader from "./shaders/planetVertex.glsl";
@@ -33,6 +33,7 @@ const Planet: React.FC<PlanetProps> = () => {
   const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
 
   // Shadow camera setup
+  const ambientLightRef = useRef<number>(0.025);
   const lightRef = useRef<THREE.DirectionalLight>(null);
   const lightCamera = new THREE.OrthographicCamera(-5, 5, 5, -5, 1, 20);
 
@@ -44,14 +45,15 @@ const Planet: React.FC<PlanetProps> = () => {
     uShadowMap: { value: shadowMap.texture },
     uLightPos: { value: lightPosition },
     uEyePos: { value: camera.position },
-    uTime: { value: 0.0 }, // Keep time uniform for animations
+    uTime: { value: 0.0 }, // Keep time 
+    uAmbientLight: { value: ambientLightRef.current },
   }).current;
 
   const brushMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uHeightmap: { value: heightmapA.texture },
       uUV: { value: new THREE.Vector2(0, 0) },
-      uBrushSize: { value: 0.03 },
+      uBrushSize: { value: 0.01 },
       uBrushStrength: { value: 1.0 },
     },
     vertexShader: brushVertexShader,
@@ -62,10 +64,12 @@ const Planet: React.FC<PlanetProps> = () => {
 
   const mousePosition = useRef({ x: 0, y: 0 });
   const isShiftKeyPressed = useRef(false);
+  const isCtrlKeyPressed = useRef(false);
   useEffect(() => {
     const updateMousePosition = (event: MouseEvent) => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
+      isCtrlKeyPressed.current = event.ctrlKey;
     };
   
     window.addEventListener("mousemove", updateMousePosition);
@@ -111,7 +115,7 @@ const Planet: React.FC<PlanetProps> = () => {
       for (const { uv, strength } of pendingPoints) {
         brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
         brushMaterial.uniforms.uUV.value = uv;
-        brushMaterial.uniforms.uBrushStrength.value = strength;
+        brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
 
         gl.setRenderTarget(nextHeightmap);
         gl.clear();
@@ -137,7 +141,7 @@ const Planet: React.FC<PlanetProps> = () => {
   };
 
   const handleTerrainEdit = () => {
-    if (!isDrawingRef.current || !meshRef.current ) return;
+    if (isCtrlKeyPressed.current || !isDrawingRef.current || !meshRef.current ) return;
     
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     pointer.current.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
