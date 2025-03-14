@@ -23,11 +23,12 @@ const Planet: React.FC<PlanetProps> = () => {
   const heightmapA = useFBO(heightMapSize, heightMapSize);
   const heightmapB = useFBO(heightMapSize, heightMapSize);
   const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
-  const { camera, gl } = useThree();
+  const { camera, gl, clock } = useThree();
+  const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
   const pointer = useRef(new THREE.Vector2());
-  const scene = new THREE.Scene();
   const lightPosition =  new THREE.Vector3(0, 0, 10);
+
 
   const { invalidate } = useThree();
   const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
@@ -38,14 +39,14 @@ const Planet: React.FC<PlanetProps> = () => {
 
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const universalMaterialUniforms = { 
+  const universalMaterialUniforms = useRef({
     uHeightmap: { value: heightmapA.texture },
     uHeightmapSize: { value: heightMapSize },
     uShadowMap: { value: shadowMap.texture },
-    uLightPos: { value:  lightPosition },
+    uLightPos: { value: lightPosition },
     uEyePos: { value: camera.position },
-    uTime: { value: 0.0 }, // Add time uniform
-  };
+    uTime: { value: 0.0 }, // Keep time uniform for animations
+  }).current;
 
   const brushMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -60,20 +61,23 @@ const Planet: React.FC<PlanetProps> = () => {
   const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), brushMaterial);
   quadScene.add(quadMesh);
 
-  useFrame((state) => {
-    const { gl, scene, camera, clock } = state;
-
+  useFrame(() => {
+    
     // Update time uniform
 
-    console.log("useFrame running"); 
-    universalMaterialUniforms.uTime.value = clock.getElapsedTime();
-
+    console.log("useFrame running, part A"); 
+    
     if (lightRef.current) {
       // Update light camera position to match directional light
       lightCamera.position.copy(lightRef.current.position);
       lightCamera.lookAt(0, 0, 0);
       lightCamera.updateMatrixWorld(true);
     }
+
+    universalMaterialUniforms.uTime.value = clock.getElapsedTime();
+    universalMaterialUniforms.uEyePos.value = camera.position;
+    universalMaterialUniforms.uHeightmap.value = activeHeightmap.texture;
+
 
     // Render the scene from the light's perspective into the shadow map
     gl.setRenderTarget(shadowMap);
@@ -109,6 +113,7 @@ const Planet: React.FC<PlanetProps> = () => {
   });
 
   const handlePointerDown = (event: THREE.Event) => {
+    
     if (!meshRef.current) return;
   
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
@@ -128,6 +133,8 @@ const Planet: React.FC<PlanetProps> = () => {
         setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
       }
     }
+
+    invalidate();
   };
 
   const modifyHeightmap = (uv: THREE.Vector2, strength: number) => {
