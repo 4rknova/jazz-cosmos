@@ -7,6 +7,8 @@ import planetVertexShader from "./shaders/planetVertex.glsl";
 import planetFragmentShader from "./shaders/planetFragment.glsl";
 import vizVertexShader from "./shaders/vizVertex.glsl";
 import vizFragmentShader from "./shaders/vizFragment.glsl";
+import brushVertexShader from "./shaders/brushVertex.glsl";
+import brushFragmentShader from "./shaders/brushFragment.glsl";
 
 interface PlanetProps {
   disableEditing: boolean;
@@ -18,8 +20,8 @@ const Planet: React.FC<PlanetProps> = () => {
   const heightMapSize = 1024; // Heightmap texture resolution
   const rt0 = useFBO();
   const shadowMap = useFBO(heightMapSize, heightMapSize);
-  const heightmapA = useFBO(2*heightMapSize, heightMapSize);
-  const heightmapB = useFBO(2*heightMapSize, heightMapSize);
+  const heightmapA = useFBO(heightMapSize, heightMapSize);
+  const heightmapB = useFBO(heightMapSize, heightMapSize);
   const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
   const { camera, gl } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
@@ -27,19 +29,22 @@ const Planet: React.FC<PlanetProps> = () => {
   const scene = new THREE.Scene();
   const lightPosition =  new THREE.Vector3(0, 0, 10);
 
-  
+  const { invalidate } = useThree();
+  const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
+
   // Shadow camera setup
   const lightRef = useRef<THREE.DirectionalLight>(null);
   const lightCamera = new THREE.OrthographicCamera(-5, 5, 5, -5, 1, 20);
 
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const planetMaterialUniforms = { 
+  const universalMaterialUniforms = { 
     uHeightmap: { value: heightmapA.texture },
     uHeightmapSize: { value: heightMapSize },
     uShadowMap: { value: shadowMap.texture },
     uLightPos: { value:  lightPosition },
     uEyePos: { value: camera.position },
+    uTime: { value: 0.0 }, // Add time uniform
   };
 
   const brushMaterial = new THREE.ShaderMaterial({
@@ -49,46 +54,26 @@ const Planet: React.FC<PlanetProps> = () => {
       uBrushSize: { value: 0.03 },
       uBrushStrength: { value: 1.0 },
     },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      varying vec2 vUv;
-      uniform sampler2D uHeightmap;
-      uniform vec2 uUV;
-      uniform float uBrushSize;
-      uniform float uBrushStrength;
-
-      void main() {
-        vec4 original = texture2D(uHeightmap, vUv);
-        float dist = distance(vUv, uUV);
-
-        if (dist < uBrushSize) {
-          original.r += uBrushStrength * (1.0 - dist / uBrushSize);
-        }
-
-        original.r = clamp(original.r, 0.0, 0.25);
-        original.gba = vec3(0.0,0.0,0.0);
-        
-        gl_FragColor = original;
-      }
-    `,
+    vertexShader: brushVertexShader,
+    fragmentShader: brushFragmentShader,
   });  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ff00 })));
   const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), brushMaterial);
   quadScene.add(quadMesh);
 
   useFrame((state) => {
-    const { gl, scene, camera } = state;
+    const { gl, scene, camera, clock } = state;
 
-    if (!lightRef.current) return;
-    // Update light camera position to match directional light
-    lightCamera.position.copy(lightRef.current.position);
-    lightCamera.lookAt(0, 0, 0);
-    lightCamera.updateMatrixWorld(true);
+    // Update time uniform
+
+    console.log("useFrame running"); 
+    universalMaterialUniforms.uTime.value = clock.getElapsedTime();
+
+    if (lightRef.current) {
+      // Update light camera position to match directional light
+      lightCamera.position.copy(lightRef.current.position);
+      lightCamera.lookAt(0, 0, 0);
+      lightCamera.updateMatrixWorld(true);
+    }
 
     // Render the scene from the light's perspective into the shadow map
     gl.setRenderTarget(shadowMap);
@@ -99,28 +84,48 @@ const Planet: React.FC<PlanetProps> = () => {
     gl.setRenderTarget(rt0);
     gl.render(scene, camera);
 
-    
+
+    if (pendingPoints.length > 0) {
+      // Choose the inactive buffer for writing
+      const nextHeightmap = activeHeightmap === heightmapA ? heightmapB : heightmapA;
+      // Render each point to the heightmap
+      for (const { uv, strength } of pendingPoints) {
+        brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
+        brushMaterial.uniforms.uUV.value = uv;
+        brushMaterial.uniforms.uBrushStrength.value = strength;
+
+        gl.setRenderTarget(nextHeightmap);
+        gl.clear();
+        gl.render(quadScene, quadCamera);
+      }
+
+      // Swap buffers (nextHeightmap becomes active)
+      setActiveHeightmap(nextHeightmap);
+      // Clear pending points after processing
+      setPendingPoints([]);
+    }
+
     gl.setRenderTarget(null);
   });
 
-
   const handlePointerDown = (event: THREE.Event) => {
     if (!meshRef.current) return;
-
+  
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     pointer.current.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+  
     // Perform raycasting
     raycaster.current.setFromCamera(pointer.current, camera);
     const intersects = raycaster.current.intersectObject(meshRef.current);
-
+  
     if (intersects.length > 0) {
       const { uv } = intersects[0];
       if (uv) {
-        const strength =  event.shiftKey ? -0.05 : 0.05;
-        //console.log("Clicked UV Coordinates:", uv);
-        modifyHeightmap(uv, strength);
+        const strength = event.shiftKey ? -1 : 1;
+  
+        // Append new point to the list
+        setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
       }
     }
   };
@@ -143,6 +148,7 @@ const Planet: React.FC<PlanetProps> = () => {
 
    // Reset to default render target
    gl.setRenderTarget(null);
+   invalidate();
   };
 
 
@@ -154,7 +160,7 @@ const Planet: React.FC<PlanetProps> = () => {
         <icosahedronGeometry args={[1, 100]}
       />
       <shaderMaterial
-          uniforms={planetMaterialUniforms}
+          uniforms={universalMaterialUniforms}
           fragmentShader={planetFragmentShader}
           vertexShader={planetVertexShader}
         />
@@ -164,9 +170,9 @@ const Planet: React.FC<PlanetProps> = () => {
         position={[-2.5, -1.5, 0]}
         scale={[1, 1, 1]}
       >
-        <planeGeometry args={[1, 1]} />
+        <planeGeometry args={[2, 1]} />
         <shaderMaterial
-          uniforms={planetMaterialUniforms}
+          uniforms={universalMaterialUniforms}
           fragmentShader={vizFragmentShader}
           vertexShader={vizVertexShader}
         />    

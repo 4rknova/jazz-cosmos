@@ -35,7 +35,7 @@ function App() {
     <>
       <main className="w-full h-dvh bg-black">
         
-        <Canvas camera={{ position: [5, 2, 5] }}>
+        <Canvas camera={{ position: [5, 2, 5]}} frameloop="always">
         <Environment background={true} files="../resources/galactic_plane_hazy_nebulae_1.jpg" />
 
           <ambientLight intensity={0.5} />
