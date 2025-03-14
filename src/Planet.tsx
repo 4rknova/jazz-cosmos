@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
 import * as THREE from "three";
@@ -29,8 +29,7 @@ const Planet: React.FC<PlanetProps> = () => {
   const pointer = useRef(new THREE.Vector2());
   const lightPosition =  new THREE.Vector3(0, 0, 10);
 
-
-  const { invalidate } = useThree();
+  const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
 
   // Shadow camera setup
@@ -61,6 +60,21 @@ const Planet: React.FC<PlanetProps> = () => {
   const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), brushMaterial);
   quadScene.add(quadMesh);
 
+  const mousePosition = useRef({ x: 0, y: 0 });
+  const isShiftKeyPressed = useRef(false);
+  useEffect(() => {
+    const updateMousePosition = (event: MouseEvent) => {
+      mousePosition.current = { x: event.clientX, y: event.clientY };
+      isShiftKeyPressed.current = event.shiftKey;
+    };
+  
+    window.addEventListener("mousemove", updateMousePosition);
+  
+    return () => {
+      window.removeEventListener("mousemove", updateMousePosition);
+    };
+  }, []);
+
   useFrame(() => {
     
     // Update time uniform
@@ -88,6 +102,7 @@ const Planet: React.FC<PlanetProps> = () => {
     gl.setRenderTarget(rt0);
     gl.render(scene, camera);
 
+    handleTerrainEdit();
 
     if (pendingPoints.length > 0) {
       // Choose the inactive buffer for writing
@@ -112,13 +127,21 @@ const Planet: React.FC<PlanetProps> = () => {
     gl.setRenderTarget(null);
   });
 
-  const handlePointerDown = (event: THREE.Event) => {
+
+  const handlePointerDown = () => {
+    isDrawingRef.current = true;
+  };
+
+  const handlePointerUp = () => {
+    isDrawingRef.current = false;
+  };
+
+  const handleTerrainEdit = () => {
+    if (!isDrawingRef.current || !meshRef.current ) return;
     
-    if (!meshRef.current) return;
-  
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    pointer.current.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    pointer.current.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    pointer.current.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
   
     // Perform raycasting
     raycaster.current.setFromCamera(pointer.current, camera);
@@ -127,42 +150,19 @@ const Planet: React.FC<PlanetProps> = () => {
     if (intersects.length > 0) {
       const { uv } = intersects[0];
       if (uv) {
-        const strength = event.shiftKey ? -1 : 1;
-  
-        // Append new point to the list
+      const strength = isShiftKeyPressed.current ? -1 : 1;
+
+      // Append new point to the list
         setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
       }
     }
-
-    invalidate();
   };
-
-  const modifyHeightmap = (uv: THREE.Vector2, strength: number) => {
-   // Choose the inactive buffer for writing
-   const nextHeightmap = activeHeightmap === heightmapA ? heightmapB : heightmapA;
-
-   brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture; // Read from active
-   brushMaterial.uniforms.uUV.value = uv;
-   brushMaterial.uniforms.uBrushStrength.value = strength;
-
-   // Render updated heightmap into nextHeightmap
-   gl.setRenderTarget(nextHeightmap);
-   gl.clear();
-   gl.render(quadScene, quadCamera);
-
-   // Swap buffers (nextHeightmap becomes active)
-   setActiveHeightmap(nextHeightmap);
-
-   // Reset to default render target
-   gl.setRenderTarget(null);
-   invalidate();
-  };
-
 
   return (
     <group>
       <mesh ref={meshRef} castShadow receiveShadow
-      onPointerDown={handlePointerDown}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
       >
         <icosahedronGeometry args={[1, 100]}
       />
@@ -189,4 +189,3 @@ const Planet: React.FC<PlanetProps> = () => {
 };
 
 export default Planet;
-
