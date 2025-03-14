@@ -3,6 +3,10 @@ import { useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
 import * as THREE from "three";
+import planetVertexShader from "./shaders/planetVertex.glsl";
+import planetFragmentShader from "./shaders/planetFragment.glsl";
+import vizVertexShader from "./shaders/vizVertex.glsl";
+import vizFragmentShader from "./shaders/vizFragment.glsl";
 
 interface PlanetProps {
   disableEditing: boolean;
@@ -17,8 +21,6 @@ const Planet: React.FC<PlanetProps> = () => {
   const heightmapA = useFBO(2*heightMapSize, heightMapSize);
   const heightmapB = useFBO(2*heightMapSize, heightMapSize);
   const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
-
-  const tempRenderTarget = useFBO(heightMapSize, heightMapSize); // Temporary render target
   const { camera, gl } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
   const pointer = useRef(new THREE.Vector2());
@@ -37,64 +39,15 @@ const Planet: React.FC<PlanetProps> = () => {
     uHeightmapSize: { value: heightMapSize },
     uShadowMap: { value: shadowMap.texture },
     uLightPos: { value:  lightPosition },
+    uEyePos: { value: camera.position },
   };
-  const planetMaterialVertexShader= `
-    precision highp float;
-    varying vec2 vUv;
-    varying vec3 vNormal;
-    uniform sampler2D uHeightmap;
-
-    float displacement(vec2 vUv) {
-      return texture2D(uHeightmap, vUv).r;
-    }
-
-    void main() {
-      vUv = uv;
-      vNormal = normal;
-      vec3 pos = position + normal * displacement(uv);
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-    }
-  `;
-  const planetMaterialfragmentShader= `
-    precision highp float;
-    varying vec2 vUv;
-    varying vec3 vNormal;
-    uniform vec3 uLightPos;
-    uniform sampler2D uHeightmap;
-
-    float displacement(vec2 vUv) {
-      return texture2D(uHeightmap, vUv).r;
-    }
-
-    vec3 normal(vec2 uv)
-    {
-      return texture2D(uHeightmap, uv).gba;
-    }
-
-    void main() {
-      float displacement = displacement(vUv);
-      
-      vec3 color = vec3(0.0, 0.0, 0.0);
-
-      if (displacement > 0.05) {
-        color = vec3(0.5, 0.3, 0.1);
-      } else {
-        color = vec3(0.04, 0.1, 1.0);
-      }
-
-      vec3 lightDir = normalize(uLightPos);
-      color *= dot(lightDir, normal(vUv));
-
-      gl_FragColor = vec4(color, 1.0);
-    }
-  `;
 
   const brushMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uHeightmap: { value: heightmapA.texture },
       uUV: { value: new THREE.Vector2(0, 0) },
-      uBrushSize: { value: 0.02 },
-      uBrushStrength: { value: 0.1 },
+      uBrushSize: { value: 0.03 },
+      uBrushStrength: { value: 1.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -107,38 +60,8 @@ const Planet: React.FC<PlanetProps> = () => {
       varying vec2 vUv;
       uniform sampler2D uHeightmap;
       uniform vec2 uUV;
-      uniform float uHeightmapSize;
       uniform float uBrushSize;
       uniform float uBrushStrength;
-
-      #define OFFSET_X 1
-      #define OFFSET_Y 1
-      #define DEPTH	 5.5
-
-      vec3 texsample(const int x, const int y, in vec2 fragCoord)
-      {
-        vec2 resolution = vec2(2.0 * uHeightmapSize, uHeightmapSize);
-        vec2 uv = (uUV * resolution + vec2(x, y)) / resolution;
-        return texture(uHeightmap, uv).xyz;
-      }
-
-      float cluminance(vec3 c)
-      {
-        return dot(c, vec3(.2126, .7152, .0722));
-      }
-
-      vec3 normal(in vec2 fragCoord)
-      {
-        float R = abs(cluminance(texsample( OFFSET_X,0, fragCoord)));
-        float L = abs(cluminance(texsample(-OFFSET_X,0, fragCoord)));
-        float D = abs(cluminance(texsample(0, OFFSET_Y, fragCoord)));
-        float U = abs(cluminance(texsample(0,-OFFSET_Y, fragCoord)));
-              
-        float X = (L-R) * .5;
-        float Y = (U-D) * .5;
-
-        return normalize(vec3(X, Y, 1. / DEPTH));
-      }
 
       void main() {
         vec4 original = texture2D(uHeightmap, vUv);
@@ -149,7 +72,7 @@ const Planet: React.FC<PlanetProps> = () => {
         }
 
         original.r = clamp(original.r, 0.0, 0.25);
-        original.gba = normal(vUv);
+        original.gba = vec3(0.0,0.0,0.0);
         
         gl_FragColor = original;
       }
@@ -195,18 +118,20 @@ const Planet: React.FC<PlanetProps> = () => {
     if (intersects.length > 0) {
       const { uv } = intersects[0];
       if (uv) {
+        const strength =  event.shiftKey ? -0.05 : 0.05;
         //console.log("Clicked UV Coordinates:", uv);
-        incrementHeightmap(uv);
+        modifyHeightmap(uv, strength);
       }
     }
   };
 
-  const incrementHeightmap = (uv: THREE.Vector2) => {
+  const modifyHeightmap = (uv: THREE.Vector2, strength: number) => {
    // Choose the inactive buffer for writing
    const nextHeightmap = activeHeightmap === heightmapA ? heightmapB : heightmapA;
 
    brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture; // Read from active
    brushMaterial.uniforms.uUV.value = uv;
+   brushMaterial.uniforms.uBrushStrength.value = strength;
 
    // Render updated heightmap into nextHeightmap
    gl.setRenderTarget(nextHeightmap);
@@ -226,12 +151,12 @@ const Planet: React.FC<PlanetProps> = () => {
       <mesh ref={meshRef} castShadow receiveShadow
       onPointerDown={handlePointerDown}
       >
-        <icosahedronGeometry args={[2, 50]}
+        <icosahedronGeometry args={[1, 100]}
       />
       <shaderMaterial
           uniforms={planetMaterialUniforms}
-          fragmentShader={planetMaterialfragmentShader}
-          vertexShader={planetMaterialVertexShader}
+          fragmentShader={planetFragmentShader}
+          vertexShader={planetVertexShader}
         />
       </mesh>
       <mesh
@@ -242,8 +167,8 @@ const Planet: React.FC<PlanetProps> = () => {
         <planeGeometry args={[1, 1]} />
         <shaderMaterial
           uniforms={planetMaterialUniforms}
-          fragmentShader={planetMaterialfragmentShader}
-          vertexShader={planetMaterialVertexShader}
+          fragmentShader={vizFragmentShader}
+          vertexShader={vizVertexShader}
         />    
       </mesh>
     </group>

@@ -10,7 +10,6 @@ function App() {
   const { me } = useAccount({ profile: {}, root: {} });
 
   const isAuthenticated = useIsAuthenticated();
-  const [showWireframe, setShowWireframe] = useState(true);
   
   const [controlHeld, setControlHeld] = useState(false);
 
@@ -55,7 +54,7 @@ function App() {
             shadow-camera-bottom={-10}
           />
 
-          <Planet  showWireframe={showWireframe} disableEditing={controlHeld}/>
+          <Planet disableEditing={controlHeld}/>
           {/* Enable OrbitControls ONLY when Control is held */}
           {controlHeld &&  <OrbitControls enableZoom={true} />}
         </Canvas>
