@@ -80,11 +80,7 @@ const Planet: React.FC<PlanetProps> = () => {
   }, []);
 
   useFrame(() => {
-    
-    // Update time uniform
-
-    console.log("useFrame running, part A"); 
-    
+        
     if (lightRef.current) {
       // Update light camera position to match directional light
       lightCamera.position.copy(lightRef.current.position);
@@ -181,12 +177,13 @@ const Planet: React.FC<PlanetProps> = () => {
         position={[-2.5, -1.5, 0]}
         scale={[1, 1, 1]}
       >
-        <planeGeometry args={[2, 1]} />
+        
+        {/* <planeGeometry args={[2, 1]} />
         <shaderMaterial
           uniforms={universalMaterialUniforms}
           fragmentShader={vizFragmentShader}
           vertexShader={vizVertexShader}
-        />    
+        />     */}
       </mesh>
     </group>
   );
