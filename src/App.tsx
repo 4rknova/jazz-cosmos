@@ -5,6 +5,7 @@ import { OrbitControls, Environment } from "@react-three/drei";
 import Planet from "./Planet";
 import { AuthButton } from "./AuthButton.tsx";
 import { Logo } from "./Logo.tsx";
+import Stars from "./Stars";
 
 function App() {
   const { me } = useAccount({ profile: {}, root: {} });
@@ -53,7 +54,7 @@ function App() {
             shadow-camera-top={10}
             shadow-camera-bottom={-10}
           />
-
+          <Stars />
           <Planet disableEditing={controlHeld}/>
           {/* Enable OrbitControls ONLY when Control is held */}
           {controlHeld &&  <OrbitControls enableZoom={true} />}
