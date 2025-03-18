@@ -1,8 +1,10 @@
 import { useFBO } from "@react-three/drei";
 import { ThreeEvent, Vector3, useFrame, useThree } from "@react-three/fiber";
+import { useAccount } from "jazz-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { Cursor, CursorFeed, Vec3 } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
@@ -15,6 +17,7 @@ interface PlanetProps {
 }
 
 const Planet: React.FC<PlanetProps> = () => {
+  const { me } = useAccount();
   const meshRef = useRef<THREE.Mesh>(null);
   const heightmapPreviewRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -23,6 +26,8 @@ const Planet: React.FC<PlanetProps> = () => {
     depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize),
     depthBuffer: true,
   });
+
+  const cursorFeed = me.profile.cursorFeed;
 
   shadowMap.depthTexture.format = THREE.DepthFormat;
   shadowMap.depthTexture.type = THREE.UnsignedShortType;
@@ -132,6 +137,19 @@ const Planet: React.FC<PlanetProps> = () => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
       isCtrlKeyPressed.current = event.ctrlKey;
+
+      // Update cursor position in CursorFeed if available
+      if (cursorFeed && hoverPosition) {
+        const position = Vec3.create({
+          x: hoverPosition.x,
+          y: hoverPosition.y,
+          z: hoverPosition.z,
+        });
+        const cursor = Cursor.create({
+          position,
+        });
+        cursorFeed.push(cursor);
+      }
     };
 
     const handleMouseDown = (event: MouseEvent) => {
@@ -173,10 +191,24 @@ const Planet: React.FC<PlanetProps> = () => {
       }
 
       if (normal) {
+        const newPosition = point
+          .clone()
+          .add(normal.clone().multiplyScalar(0.01));
         setHoverNormal(normal.clone());
-        setHoverPosition(
-          point.clone().add(normal.clone().multiplyScalar(0.01)),
-        );
+        setHoverPosition(newPosition);
+
+        // Update cursor position in CursorFeed if available
+        if (cursorFeed) {
+          const position = Vec3.create({
+            x: newPosition.x,
+            y: newPosition.y,
+            z: newPosition.z,
+          });
+          const cursor = Cursor.create({
+            position,
+          });
+          cursorFeed.push(cursor);
+        }
       }
     } else {
       setHoverPosition(null);
@@ -257,7 +289,11 @@ const Planet: React.FC<PlanetProps> = () => {
 
   const handleTerrainEdit = () => {
     // Only perform terrain editing with left mouse button (0)
-    if (activeMouseButton.current !== 0 || !isDrawingRef.current || !meshRef.current)
+    if (
+      activeMouseButton.current !== 0 ||
+      !isDrawingRef.current ||
+      !meshRef.current
+    )
       return;
 
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
