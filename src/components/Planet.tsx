@@ -353,13 +353,8 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
         />
       </mesh>
 
-      {/* Get the latest entry from each account */}
-      {/* const latestEntriesByAccount = Object.values(activityFeed).map(entry => ({
-        accountName: entry.by?.profile?.name,
-        value: entry.value,
-      })); */}
-
       {Object.values(simulation?.cursorFeed ?? {}).map((cursor, i) => {
+        if (cursor._owner?.id !== me?.id) return;
         return (
           <mesh
             key={i}
