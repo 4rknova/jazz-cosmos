@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import starsFragmentShader from "../shaders/starsFragment.glsl";
 import starsVertexShader from "../shaders/starsVertex.glsl";
+import starsFragmentShader from "../shaders/starsFragment.glsl";
 
 const Stars = () => {
 	const starGeometry = useMemo(() => {

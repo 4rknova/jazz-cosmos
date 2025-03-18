@@ -3,12 +3,12 @@ import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree, Vector3 } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
 import * as THREE from "three";
-import planetVertexShader from "./shaders/planetVertex.glsl";
-import planetFragmentShader from "./shaders/planetFragment.glsl";
-import brushVertexShader from "./shaders/brushVertex.glsl";
-import brushFragmentShader from "./shaders/brushFragment.glsl";
-import pointerVertexShader from "./shaders/pointerVertex.glsl";
-import pointerFragmentShader from "./shaders/pointerFragment.glsl";
+import planetVertexShader from "../shaders/planetVertex.glsl";
+import planetFragmentShader from "../shaders/planetFragment.glsl";
+import brushVertexShader from "../shaders/brushVertex.glsl";
+import brushFragmentShader from "../shaders/brushFragment.glsl";
+import pointerVertexShader from "../shaders/pointerVertex.glsl";
+import pointerFragmentShader from "../shaders/pointerFragment.glsl";
 
 interface PlanetProps {
 	disableEditing: boolean;
