@@ -10,22 +10,22 @@ import { CosmosAccount } from "./schema.ts";
 export const APPLICATION_NAME = "Jazz starter";
 
 declare module "jazz-react" {
-	export interface Register {
-		Account: CosmosAccount;
-	}
+  export interface Register {
+    Account: CosmosAccount;
+  }
 }
 
 // biome-ignore lint/style/noNonNullAssertion: <explanation>
 createRoot(document.getElementById("root")!).render(
-	<StrictMode>
-		<JazzProvider
-			sync={{
-				peer: `wss://cloud.jazz.tools/?key=${apiKey}`,
-				when: "signedUp", // This way when the user hasn't signed up we store the data only locally
-			}}
-			AccountSchema={CosmosAccount}
-		>
-			<App />
-		</JazzProvider>
-	</StrictMode>,
+  <StrictMode>
+    <JazzProvider
+      sync={{
+        peer: `wss://cloud.jazz.tools/?key=${apiKey}`,
+        when: "signedUp", // This way when the user hasn't signed up we store the data only locally
+      }}
+      AccountSchema={CosmosAccount}
+    >
+      <App />
+    </JazzProvider>
+  </StrictMode>,
 );

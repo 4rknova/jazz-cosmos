@@ -57,7 +57,7 @@ export class CosmosAccount extends Account {
             }),
           }),
         },
-        group
+        group,
       );
     }
   }
