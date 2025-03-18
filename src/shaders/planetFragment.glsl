@@ -18,7 +18,8 @@ const float LAND_THRESHOLD = 0.02;     // Rocky land
 const float MOUNTAIN_THRESHOLD = 0.08; // Snowy mountains
 
 // Terrain Colors
-const vec3 WATER_COLOR = vec3(0.34, 0.4, 0.9);   // Deep Blue
+const vec3 WATER_COLOR_DEEP = vec3(0.0, 0.4, 0.8);   // Deep Blue
+const vec3 WATER_COLOR_SHALLOW = vec3(0.2, 0.6, 1.0);   // Deep Blue
 const vec3 SAND_COLOR = vec3(0.9, 0.8, 0.6);     // Light Yellowish Sand
 const vec3 VALLEY_COLOR = vec3(0.2, 0.8, 0.2);   // Lush Green
 const vec3 LAND_COLOR = vec3(0.5, 0.4, 0.2);     // Brownish Rocky Land
@@ -58,6 +59,20 @@ float hash(in vec3 p)
     return fract(sin(dot(p,vec3(127.1,311.7, 321.4)))*43758.5453123);
 }
 
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
 // Simple 3D noise function (value noise)
 float noise(in vec3 p)
 {
@@ -87,6 +102,39 @@ float fbm(in vec3 p)
     return f;
 }
 
+// Generate wave pattern
+float wavePattern(vec2 uv, float time) {
+    float waves = 0.0;
+    float frequency = 2.0;
+    float amplitude = 0.1;
+    
+    for (int i = 0; i < 4; i++) {
+        waves += sin(uv.y * frequency + noise(uv.yx + time) * 2.0) * amplitude;
+        frequency *= 1.8;
+        amplitude *= 0.5;
+    }
+
+    return waves;
+}
+
+// Procedural sea texture function
+vec3 seaTexture(vec2 uv, float time) {
+    float waves = wavePattern(uv, time);
+    
+    // Base color variations
+    vec3 deepSea = WATER_COLOR_DEEP;
+    vec3 shallowSea = WATER_COLOR_SHALLOW;
+    
+    // Blend between deep and shallow water based on waves
+    vec3 seaColor = mix(deepSea, shallowSea, 0.2 + 0.8 * waves);
+    
+    // Add some highlights for reflections
+    float highlight = smoothstep(0.3, 0.5, waves);
+    seaColor += highlight * vec3(0.2, 0.4, 0.6);
+    
+    return seaColor;
+}
+
 // Improved procedural vegetation texture
 vec3 generateVegetationTexture(vec2 uv, float disp)
 {
@@ -111,16 +159,6 @@ vec3 generateVegetationTexture(vec2 uv, float disp)
     // Final vegetation texture with variation
     return vegetationColor;
 }
-
-// Procedural vegetation color generation based on noise
-vec3 generateVegetationColor2(vec2 uv, float disp)
-{
-    // Use FBM to generate random patchy vegetation
-    float vegetationNoise = fbm(vec3(uv * 1000.0, 1.0));
-    vec3 baseVegetationColor = VALLEY_COLOR; // Bright green
-    return mix(baseVegetationColor, vec3(0.1, 0.6, 0.2), vegetationNoise); // Add variation in color
-}
-
 
 // Improved procedural mountain texture (rocky or snowy)
 vec3 generateGroundTexture(vec2 uv, float disp)
@@ -158,11 +196,11 @@ vec3 terrainColor(float disp, vec2 uv) {
     vec3 color;
 
     if (disp < WATER_THRESHOLD) {
-        return WATER_COLOR;  // Water
+        return seaTexture(uv * 5.0 * fbm(vec3(uv * 500.0, uTime * 0.5)), uTime * 0.1);
     }
     
     if (disp >= WATER_THRESHOLD && disp < SAND_THRESHOLD) {
-        color = mix(WATER_COLOR, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
+        color = mix(WATER_COLOR_SHALLOW, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
     }
     else if (disp >= SAND_THRESHOLD && disp < VALLEY_THRESHOLD + 0.01 * fbm(vec3(uv * 400.0, 1.0))) {
         color = mix(SAND_COLOR, VALLEY_COLOR, smoothstep(SAND_THRESHOLD, VALLEY_THRESHOLD, disp));
@@ -195,6 +233,4 @@ void main() {
     color *= max(dot(lightDir, n), uAmbientLight); // Prevents excessive darkness
     
     gl_FragColor = vec4(color * shadowFactor, 1.0);
-
-	//gl_FragColor = vec4(vec3(1.0, 1.0,1.0) * shadowFactor, 1.0);
 }
