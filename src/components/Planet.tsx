@@ -27,8 +27,6 @@ const Planet: React.FC<PlanetProps> = () => {
     depthBuffer: true,
   });
 
-  const cursorFeed = me.profile.cursorFeed;
-
   shadowMap.depthTexture.format = THREE.DepthFormat;
   shadowMap.depthTexture.type = THREE.UnsignedShortType;
 
