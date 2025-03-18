@@ -1,5 +1,5 @@
 import { useFBO } from "@react-three/drei";
-import { Vector3, useFrame, useThree } from "@react-three/fiber";
+import { ThreeEvent, Vector3, useFrame, useThree } from "@react-three/fiber";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -126,6 +126,7 @@ const Planet: React.FC<PlanetProps> = () => {
   const mousePosition = useRef({ x: 0, y: 0 });
   const isShiftKeyPressed = useRef(false);
   const isCtrlKeyPressed = useRef(false);
+  const activeMouseButton = useRef<number | null>(null);
   useEffect(() => {
     const updateMousePosition = (event: MouseEvent) => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
@@ -133,10 +134,24 @@ const Planet: React.FC<PlanetProps> = () => {
       isCtrlKeyPressed.current = event.ctrlKey;
     };
 
+    const handleMouseDown = (event: MouseEvent) => {
+      activeMouseButton.current = event.button;
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === activeMouseButton.current) {
+        activeMouseButton.current = null;
+      }
+    };
+
     window.addEventListener("mousemove", updateMousePosition);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
 
@@ -226,16 +241,23 @@ const Planet: React.FC<PlanetProps> = () => {
     gl.setRenderTarget(null);
   });
 
-  const handlePointerDown = () => {
-    isDrawingRef.current = true;
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    // Only set drawing to true for left mouse button (button 0)
+    if (event.button === 0) {
+      isDrawingRef.current = true;
+    }
   };
 
-  const handlePointerUp = () => {
-    isDrawingRef.current = false;
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    // Only set drawing to false if it was the left mouse button
+    if (event.button === 0) {
+      isDrawingRef.current = false;
+    }
   };
 
   const handleTerrainEdit = () => {
-    if (isCtrlKeyPressed.current || !isDrawingRef.current || !meshRef.current)
+    // Only perform terrain editing with left mouse button (0)
+    if (activeMouseButton.current !== 0 || !isDrawingRef.current || !meshRef.current)
       return;
 
     // Convert screen coordinates to normalized device coordinates (-1 to +1)

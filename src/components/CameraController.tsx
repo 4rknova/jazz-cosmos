@@ -1,6 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 
 interface CameraControllerProps {
   onCameraChange: (
@@ -16,6 +17,7 @@ interface CameraControllerProps {
 export function CameraController({ onCameraChange }: CameraControllerProps) {
   const { camera } = useThree();
   const controlsRef = useRef(null);
+  const [isControlPressed, setIsControlPressed] = useState(false);
 
   // Helper function to get current camera position
   const getCurrentPosition = () => ({
@@ -35,6 +37,31 @@ export function CameraController({ onCameraChange }: CameraControllerProps) {
     }
   });
 
+  // Add keyboard event listeners for control key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        console.log("Control key pressed");
+        setIsControlPressed(true);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        console.log("Control key released");
+        setIsControlPressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
   return (
     <OrbitControls
       ref={controlsRef}
@@ -42,6 +69,11 @@ export function CameraController({ onCameraChange }: CameraControllerProps) {
       onEnd={() => {
         // This fires when control interaction ends
         onCameraChange(getCurrentPosition(), true);
+      }}
+      mouseButtons={{
+        LEFT: undefined,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE,
       }}
     />
   );
