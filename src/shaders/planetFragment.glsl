@@ -147,13 +147,13 @@ vec3 generateMountainTexture2(vec2 uv, float disp)
 {
     // Scale the UV coordinates for higher texture detail on mountains
     float noiseValue = fbm(vec3(uv * 500.0, 2.0)); // FBM noise
-    float textureValue = smoothstep(0.4, 0.6, noiseValue); // Control the texture roughness
+    float textureValue = smoothstep(0.3, 0.9, noiseValue); // Control the texture roughness
 
     // Add variation based on displacement for rocky or snowy effects
-    vec3 baseMountainTexture = mix(MOUNTAIN_COLOR, vec3(1.0, 1.0, 1.0), textureValue); // Lighter texture for snow
+    vec3 baseMountainTexture = mix(MOUNTAIN_COLOR,vec3(1.0, 1.0, 1.0), textureValue); // Lighter texture for snow
 
     // Create a more rough, rocky texture for mountain areas
-    return mix(baseMountainTexture, vec3(0.7, 0.7, 0.7), disp * 2.0); // Adjust the mix based on displacement
+    return mix(baseMountainTexture, vec3(0.65, 0.61, 0.6), disp); // Adjust the mix based on displacement
 }
 
 // Terrain color blending function
@@ -173,7 +173,7 @@ vec3 terrainColor(float disp, vec2 uv) {
     else if (disp >= VALLEY_THRESHOLD && disp < LAND_THRESHOLD) {
         color = generateVegetationTexture(uv, disp);
     }
-    else if (disp >= LAND_THRESHOLD && disp < MOUNTAIN_THRESHOLD) {
+    else if (disp >= LAND_THRESHOLD && disp < MOUNTAIN_THRESHOLD - 0.04 * fbm(vec3(uv * 1000.0, 1.0))) {
 		vec3 groundTexture = generateGroundTexture(uv,disp);
         color = mix(groundTexture, MOUNTAIN_COLOR, smoothstep(LAND_THRESHOLD, MOUNTAIN_THRESHOLD, disp));
     }
@@ -195,8 +195,7 @@ void main() {
     // Basic lighting (Lambertian shading)
     vec3 lightDir = normalize(-uLightPos);
     vec3 n = normalize(vNormal);
-    color *= max(dot(lightDir, n), 0.3); // Prevents excessive darkness
-    color += vec3(1.0, 1.0, 1.0) * uAmbientLight; // Ambient lighting
-
+    color *= max(dot(lightDir, n), uAmbientLight); // Prevents excessive darkness
+    
     gl_FragColor = vec4(color, 1.0);
 }
