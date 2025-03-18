@@ -1,100 +1,105 @@
-import { useAccount, useIsAuthenticated } from "jazz-react";
-import { useState, useEffect } from "react";
+import { Environment, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment } from "@react-three/drei";
-import Planet from "./Planet";
-import { AuthButton } from "./AuthButton.tsx";
-import { Logo } from "./Logo.tsx";
-import Stars from "./Stars";
+import { useAccount, useIsAuthenticated } from "jazz-react";
+import { useEffect, useState } from "react";
+import { AuthButton } from "./components/AuthButton.tsx";
+import { Logo } from "./components/Logo.tsx";
+import Planet from "./components/Planet.tsx";
+import Stars from "./components/Stars.tsx";
 
 function App() {
-  const { me } = useAccount({ profile: {}, root: {} });
+	const { me } = useAccount({ profile: {}, root: {} });
 
-  const isAuthenticated = useIsAuthenticated();
-  
-  const [controlHeld, setControlHeld] = useState(false);
+	const isAuthenticated = useIsAuthenticated();
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey) setControlHeld(true);
-    };
+	const [controlHeld, setControlHeld] = useState(false);
 
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (!event.ctrlKey) setControlHeld(false);
-    };
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.ctrlKey) setControlHeld(true);
+		};
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+		const handleKeyUp = (event: KeyboardEvent) => {
+			if (!event.ctrlKey) setControlHeld(false);
+		};
 
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
 
-  return (
-    <>
-      <main className="w-full h-dvh bg-black">
-        
-        <Canvas frameloop="always" camera={{ position: [5, 2, 5]}}>
-        <Environment background={true} files="../resources/galactic_plane_hazy_nebulae_1.jpg" />
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, []);
 
-          <ambientLight intensity={0.5} />
-          
-          {/* Directional Light with Shadows */}
-          <directionalLight
-            position={[5, 5, 5]}
-            intensity={1.2}
-            castShadow // ✅ Enable shadow casting
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
-            shadow-camera-far={20}
-            shadow-camera-left={-10}
-            shadow-camera-right={10}
-            shadow-camera-top={10}
-            shadow-camera-bottom={-10}
-          />
-          <Stars />
-          <Planet disableEditing={controlHeld}/>
-          {/* Enable OrbitControls ONLY when Control is held */}
-          {controlHeld &&  <OrbitControls enableZoom={true} />}
-        </Canvas>
+	return (
+		<>
+			<main className="w-full h-dvh bg-black">
+				<Canvas frameloop="always" camera={{ position: [5, 2, 5] }}>
+					<Environment
+						background={true}
+						files="../resources/galactic_plane_hazy_nebulae_1.jpg"
+					/>
 
-        {/* Wireframe Toggle Button */}
-        <div style={{
-          position: "absolute",
-          top: "20px",
-          left: "20px",
-          padding: "10px 15px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "16px",
-          borderRadius: "5px"}}>
-          
-          <div className="text-white pb-4 w-full">
-            <div className="flex justify-center items-center flex-col gap-5 bg-[url(/resources/logo.png)] bg-cover bg-center">
-              <div className="h-40">
-                <Logo />
-              </div>            </div>
-            {isAuthenticated ? (
-              <span>You're logged in.</span>
-            ) : (
-              <span>Authenticate to share the data with another device.</span>
-            )}
+					<ambientLight intensity={0.5} />
 
-            <p>🖱️ Click to modify terrain</p>
-            <p>⌨️ Hold <b>Control</b> to rotate & zoom the camera</p>
-            
-          </div>
-          <div  className="flex justify-center items-center flex-col gap-5">
-            <AuthButton />
-           
-          </div>
-        </div>
+					{/* Directional Light with Shadows */}
+					<directionalLight
+						position={[5, 5, 5]}
+						intensity={1.2}
+						castShadow // ✅ Enable shadow casting
+						shadow-mapSize-width={2048}
+						shadow-mapSize-height={2048}
+						shadow-camera-far={20}
+						shadow-camera-left={-10}
+						shadow-camera-right={10}
+						shadow-camera-top={10}
+						shadow-camera-bottom={-10}
+					/>
+					<Stars />
+					<Planet disableEditing={controlHeld} />
+					{/* Enable OrbitControls ONLY when Control is held */}
+					{controlHeld && <OrbitControls enableZoom={true} />}
+				</Canvas>
 
-      </main>
-    </>
-  );
+				{/* Wireframe Toggle Button */}
+				<div
+					style={{
+						position: "absolute",
+						top: "20px",
+						left: "20px",
+						padding: "10px 15px",
+						border: "none",
+						cursor: "pointer",
+						fontSize: "16px",
+						borderRadius: "5px",
+					}}
+				>
+					<div className="text-white pb-4 w-full">
+						<div className="flex justify-center items-center flex-col gap-5 bg-[url(/resources/logo.png)] bg-cover bg-center">
+							<div className="h-40">
+								<Logo />
+							</div>{" "}
+						</div>
+
+						{isAuthenticated ? (
+							<span>You're logged in.</span>
+						) : (
+							<span>Authenticate to share the data with another device.</span>
+						)}
+
+						<p>🖱️ Click to modify terrain</p>
+						<p>
+							⌨️ Hold <b>Control</b> to rotate & zoom the camera
+						</p>
+					</div>
+					<div className="flex justify-center items-center flex-col gap-5">
+						<AuthButton />
+					</div>
+				</div>
+			</main>
+		</>
+	);
 }
 
 export default App;
