@@ -27,7 +27,7 @@ const Planet: React.FC<PlanetProps> = () => {
   const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
   const pointer = useRef(new THREE.Vector2());
-  const lightPosition =  new THREE.Vector3(0, 0, 10);
+  const lightPosition =  new THREE.Vector3(0, 0, -10);
 
   const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
@@ -82,6 +82,7 @@ const Planet: React.FC<PlanetProps> = () => {
   useFrame(() => {
         
     if (lightRef.current) {
+      lightRef.current.position = new THREE.Vector3(-10, 0, 10);
       // Update light camera position to match directional light
       lightCamera.position.copy(lightRef.current.position);
       lightCamera.lookAt(0, 0, 0);
