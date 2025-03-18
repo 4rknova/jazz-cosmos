@@ -14,7 +14,7 @@ void main()
     dist *= dist;
 
     // Animate the ring size using a sine function
-    float scale = 0.25 + 0.1 * cos(uTime * 4.0); // Scale oscillates between 0.5 and 1.0
+    float scale = 0.25; // Scale oscillates between 0.5 and 1.0
     float ringSize = 0.1 + vDisplacement * 2.0; // Thickness of the ring
 
     // Create the ring effect
