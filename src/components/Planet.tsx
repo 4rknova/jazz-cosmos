@@ -1,6 +1,7 @@
 import { useFBO } from "@react-three/drei";
 import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useAccount } from "jazz-react";
+import { useAccount, useCoState } from "jazz-react";
+import { ID } from "jazz-tools";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -10,13 +11,24 @@ import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import pointerFragmentShader from "../shaders/pointerFragment.glsl";
 import pointerVertexShader from "../shaders/pointerVertex.glsl";
+import { Cursor, Simulation, Vec3 } from "../schema";
 
 interface PlanetProps {
   disableEditing: boolean;
+  simulationID?: ID<Simulation>;
 }
 
-const Planet: React.FC<PlanetProps> = () => {
+const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
   const { me } = useAccount();
+
+  // Only use the simulation if we have a valid ID
+  const simulation = simulationID
+    ? useCoState(Simulation, simulationID, {
+        cursorFeed: [],
+        editFeed: [],
+      })
+    : null;
+
   const meshRef = useRef<THREE.Mesh>(null);
   const heightmapPreviewRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -25,6 +37,8 @@ const Planet: React.FC<PlanetProps> = () => {
     depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize),
     depthBuffer: true,
   });
+
+  console.log(simulation?.cursorFeed[me.id]?.value?.position?.x);
 
   shadowMap.depthTexture.format = THREE.DepthFormat;
   shadowMap.depthTexture.type = THREE.UnsignedShortType;
@@ -188,6 +202,16 @@ const Planet: React.FC<PlanetProps> = () => {
 
     // Position and orient the indicator if hovering
     if (hoverPosition && hoverNormal && indicatorRef.current) {
+      simulation?.cursorFeed.push(
+        Cursor.create({
+          position: Vec3.create({
+            x: hoverPosition.x,
+            y: hoverPosition.y,
+            z: hoverPosition.z,
+          }),
+        }),
+      );
+
       indicatorRef.current.position.copy(hoverPosition);
       const lookAtTarget = hoverPosition.clone().add(hoverNormal);
       indicatorRef.current.lookAt(lookAtTarget);
@@ -328,6 +352,28 @@ const Planet: React.FC<PlanetProps> = () => {
           blending={THREE.NormalBlending}
         />
       </mesh>
+
+      {/* Get the latest entry from each account */}
+      {/* const latestEntriesByAccount = Object.values(activityFeed).map(entry => ({
+        accountName: entry.by?.profile?.name,
+        value: entry.value,
+      })); */}
+
+      {Object.values(simulation?.cursorFeed ?? {}).map((cursor, i) => {
+        return (
+          <mesh
+            key={i}
+            position={[
+              cursor.value.position.x,
+              cursor.value.position.y,
+              cursor.value.position.z,
+            ]}
+          >
+            <planeGeometry args={[0.1, 0.1]} />
+            <meshBasicMaterial color={0x00ff00} />
+          </mesh>
+        );
+      })}
     </group>
   );
 };
