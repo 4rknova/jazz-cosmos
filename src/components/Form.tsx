@@ -8,33 +8,18 @@ export function Form() {
   return (
     <div className="grid gap-4 border p-8">
       <div className="flex items-center gap-3">
-        <label htmlFor="firstName" className="sm:w-32">
-          First name
+        <label htmlFor="name" className="sm:w-32">
+          Name
         </label>
         <input
           type="text"
-          id="firstName"
-          placeholder="Enter your first name here..."
+          id="name"
+          placeholder="Enter your name here..."
           className="border border-stone-300 rounded shadow-sm py-1 px-2 flex-1"
-          value={me.profile.firstName || ""}
-          onChange={(e) => (me.profile.firstName = e.target.value)}
+          value={me.profile.name || ""}
+          onChange={(e) => (me.profile.name = e.target.value)}
         />
       </div>
-
-      <div className="flex items-center gap-3">
-        <label htmlFor="dateOfBirth" className="sm:w-32">
-          Date of birth
-        </label>
-        <input
-          type="date"
-          id="dateOfBirth"
-          className="border border-stone-300 rounded shadow-sm py-1 px-2 flex-1"
-          value={me.root.dateOfBirth?.toISOString().split("T")[0] || ""}
-          onChange={(e) => (me.root.dateOfBirth = new Date(e.target.value))}
-        />
-      </div>
-
-      {/*Add more fields here*/}
     </div>
   );
 }

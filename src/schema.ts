@@ -1,53 +1,50 @@
-/**
- * Learn about schemas here:
- * https://jazz.tools/docs/react/schemas/covalues
- */
+import { Account, CoFeed, CoList, CoMap, Group, Profile, co } from "jazz-tools";
 
-import { Account, CoMap, Group, Profile, co } from "jazz-tools";
-
-/** The account profile is an app-specific per-user public `CoMap`
- *  where you can store top-level objects for that user */
-export class JazzProfile extends Profile {
-  /**
-   * Learn about CoValue field/item types here:
-   * https://jazz.tools/docs/react/schemas/covalues#covalue-fielditem-types
-   */
-  firstName = co.string;
-
-  // Add public fields here
+export class Vec3 extends CoMap {
+	x = co.number;
+	y = co.number;
+	z = co.number;
 }
 
-/** The account root is an app-specific per-user private `CoMap`
- *  where you can store top-level objects for that user */
-export class AccountRoot extends CoMap {
-  dateOfBirth = co.Date;
-
-  // Add private fields here
-
-  get age() {
-    if (!this.dateOfBirth) return null;
-
-    return new Date().getFullYear() - this.dateOfBirth.getFullYear();
-  }
+export class Vec2 extends CoMap {
+	x = co.number;
+	y = co.number;
 }
 
-export class JazzAccount extends Account {
-  profile = co.ref(JazzProfile);
-  root = co.ref(AccountRoot);
+export class Camera extends CoMap {
+	position = co.ref(Vec3);
+}
 
-  /** The account migration is run on account creation and on every log-in.
-   *  You can use it to set up the account root and any other initial CoValues you need.
-   */
-  migrate(this: JazzAccount) {
-    if (this.root === undefined) {
-      const group = Group.create();
+export class WeightedPoint extends CoMap {
+	uv = co.ref(Vec2);
+	strength = co.number;
+}
 
-      this.root = AccountRoot.create(
-        {
-          dateOfBirth: new Date("1/1/1990"),
-        },
-        group,
-      );
-    }
-  }
+export class EditCluster extends CoList.Of(co.ref(WeightedPoint)) {}
+
+export class EditFeed extends CoFeed.Of(co.ref(EditCluster)) {}
+
+export class Cursor extends CoMap {
+	position = co.ref(Vec3);
+}
+
+export class CursorFeed extends CoFeed.Of(co.ref(Cursor)) {}
+
+export class CosmosProfile extends Profile {
+	camera = co.ref(Camera);
+}
+
+export class AccountRoot extends CoMap {}
+
+export class CosmosAccount extends Account {
+	profile = co.ref(CosmosProfile);
+	root = co.ref(AccountRoot);
+
+	migrate(this: CosmosAccount) {
+		if (this.root === undefined) {
+			const group = Group.create();
+
+			this.root = AccountRoot.create({}, group);
+		}
+	}
 }

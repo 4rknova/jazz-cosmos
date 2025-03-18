@@ -1,16 +1,24 @@
-import { Environment, OrbitControls } from "@react-three/drei";
+import { Environment } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useAccount, useIsAuthenticated } from "jazz-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AuthButton } from "./components/AuthButton.tsx";
+import { CameraController } from "./components/CameraController.tsx";
 import { Logo } from "./components/Logo.tsx";
 import Planet from "./components/Planet.tsx";
 import Stars from "./components/Stars.tsx";
+import { Camera, Vec3 } from "./schema.ts";
 
 function App() {
 	const { me } = useAccount({ profile: {}, root: {} });
-
 	const isAuthenticated = useIsAuthenticated();
+
+	// Default camera position
+	const defaultCameraPosition = { x: 5, y: 2, z: 5 };
+	// State to track the current camera position
+	const [cameraPosition, setCameraPosition] = useState(defaultCameraPosition);
+	// Flag to prevent saving camera position during initial load
+	const initialLoadComplete = useRef(false);
 
 	const [controlHeld, setControlHeld] = useState(false);
 
@@ -32,10 +40,64 @@ function App() {
 		};
 	}, []);
 
+	// Load camera position from profile when component mounts
+	useEffect(() => {
+		if (me?.profile) {
+			// Check if camera exists in profile
+			if (!me.profile.camera) {
+				// Create camera object if it doesn't exist
+				console.log("Creating new camera object in profile");
+				const position = Vec3.create({
+					x: defaultCameraPosition.x,
+					y: defaultCameraPosition.y,
+					z: defaultCameraPosition.z,
+				});
+				me.profile.camera = Camera.create({ position });
+			} else if (me.profile.camera.position) {
+				// Load saved camera position
+				const savedPosition = me.profile.camera.position;
+				console.log("Loaded camera position from profile:", savedPosition);
+				setCameraPosition({
+					x: savedPosition.x,
+					y: savedPosition.y,
+					z: savedPosition.z,
+				});
+			}
+			initialLoadComplete.current = true;
+		}
+	}, [me?.profile]);
+
+	// Function to handle camera position changes
+	const handleCameraChange = (
+		position: { x: number; y: number; z: number },
+		isEndOfInteraction = false,
+	) => {
+		// Update local state
+		setCameraPosition(position);
+
+		// Only save to profile when interaction ends or during continuous movement if authenticated
+		if (
+			isEndOfInteraction &&
+			initialLoadComplete.current &&
+			me?.profile?.camera?.position
+		) {
+			console.log("Saving camera position to profile:", position);
+			// Update the camera position in the profile
+			me.profile.camera.position.x = position.x;
+			me.profile.camera.position.y = position.y;
+			me.profile.camera.position.z = position.z;
+		}
+	};
+
 	return (
 		<>
 			<main className="w-full h-dvh bg-black">
-				<Canvas frameloop="always" camera={{ position: [5, 2, 5] }}>
+				<Canvas
+					frameloop="always"
+					camera={{
+						position: [cameraPosition.x, cameraPosition.y, cameraPosition.z],
+					}}
+				>
 					<Environment
 						background={true}
 						files="../resources/galactic_plane_hazy_nebulae_1.jpg"
@@ -58,8 +120,7 @@ function App() {
 					/>
 					<Stars />
 					<Planet disableEditing={controlHeld} />
-					{/* Enable OrbitControls ONLY when Control is held */}
-					{controlHeld && <OrbitControls enableZoom={true} />}
+					<CameraController onCameraChange={handleCameraChange} />
 				</Canvas>
 
 				{/* Wireframe Toggle Button */}
@@ -83,7 +144,14 @@ function App() {
 						</div>
 
 						{isAuthenticated ? (
-							<span>You're logged in.</span>
+							<div>
+								<span>You're logged in.</span>
+								<p className="text-xs mt-2">
+									Camera position: x: {cameraPosition.x.toFixed(2)}, y:{" "}
+									{cameraPosition.y.toFixed(2)}, z:{" "}
+									{cameraPosition.z.toFixed(2)}
+								</p>
+							</div>
 						) : (
 							<span>Authenticate to share the data with another device.</span>
 						)}
