@@ -15,15 +15,13 @@ function App() {
   const defaultCameraPosition = { x: 5, y: 2, z: 5 };
 
   // Function to handle camera position changes
-  const handleCameraChange = (
-    position: { x: number; y: number; z: number },
-    isEndOfInteraction = false,
-  ) => {
-    // Only save camera position when interaction ends (mouse up, etc.)
-    if (isEndOfInteraction && me?.profile?.camera?.position) {
-      console.log("Camera interaction ended, saving position:", position);
-
-      // Update camera position in profile directly
+  const handleCameraChange = (position: {
+    x: number;
+    y: number;
+    z: number;
+  }) => {
+    if (me?.profile?.camera?.position) {
+      // Update camera position in profile
       me.profile.camera.position.x = position.x;
       me.profile.camera.position.y = position.y;
       me.profile.camera.position.z = position.z;
