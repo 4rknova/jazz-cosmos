@@ -1,0 +1,82 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": [
+      "jazz-tools.json",
+      "**/ios/**",
+      "**/android/**",
+      "packages/jazz-svelte/**",
+      "examples/*svelte*/**",
+      "homepage/homepage/**",
+      "**/package.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space"
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": false,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "useImportExtensions": {
+          "level": "error",
+          "options": {
+            "suggestedExtensions": {
+              "ts": {
+                "module": "js",
+                "component": "jsx"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "include": ["packages/**/src/**"],
+      "linter": {
+        "enabled": true,
+        "rules": {
+          "recommended": false
+        }
+      }
+    },
+    {
+      "include": ["packages/cojson-storage*/**", "cojson-transport-ws/**"],
+      "linter": {
+        "enabled": true,
+        "rules": {
+          "recommended": true
+        }
+      }
+    },
+    {
+      "include": ["packages/**/src/tests/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useImportExtensions": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "info"
+          }
+        }
+      }
+    }
+  ]
+}

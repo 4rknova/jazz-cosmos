@@ -1,7 +1,7 @@
 "use client";
 
 import { useAccount, usePasskeyAuth } from "jazz-react";
-import { APPLICATION_NAME } from "./main";
+import { APPLICATION_NAME } from "../main.tsx";
 
 export function AuthButton() {
   const { logOut } = useAccount();
@@ -13,6 +13,22 @@ export function AuthButton() {
   function handleLogOut() {
     logOut();
     window.history.pushState({}, "", "/");
+  }
+
+  async function handleSignUp() {
+    try {
+      await auth.signUp("user");
+    } catch (error) {
+      console.error("Sign up failed:", error);
+    }
+  }
+
+  async function handleLogIn() {
+    try {
+      await auth.logIn();
+    } catch (error) {
+      console.error("Log in failed:", error);
+    }
   }
 
   if (auth.state === "signedIn") {
@@ -32,13 +48,13 @@ export function AuthButton() {
       <button
         type="button"
         className="bg-stone-100 py-1.5 px-3 text-sm rounded-md"
-        onClick={() => auth.signUp("")}
+        onClick={handleSignUp}
       >
         Sign up
       </button>
       <button
         type="button"
-        onClick={() => auth.logIn()}
+        onClick={handleLogIn}
         className="bg-stone-100 py-1.5 px-3 text-sm rounded-md"
       >
         Log in

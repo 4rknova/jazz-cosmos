@@ -1,14 +1,14 @@
-import type React from "react";
-import { useRef, useState, useEffect } from "react";
-import { useFrame, useThree, Vector3 } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
+import { Vector3, useFrame, useThree } from "@react-three/fiber";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import planetVertexShader from "./shaders/planetVertex.glsl";
-import planetFragmentShader from "./shaders/planetFragment.glsl";
-import brushVertexShader from "./shaders/brushVertex.glsl";
-import brushFragmentShader from "./shaders/brushFragment.glsl";
-import pointerVertexShader from "./shaders/pointerVertex.glsl";
-import pointerFragmentShader from "./shaders/pointerFragment.glsl";
+import brushFragmentShader from "../shaders/brushFragment.glsl";
+import brushVertexShader from "../shaders/brushVertex.glsl";
+import planetFragmentShader from "../shaders/planetFragment.glsl";
+import planetVertexShader from "../shaders/planetVertex.glsl";
+import pointerFragmentShader from "../shaders/pointerFragment.glsl";
+import pointerVertexShader from "../shaders/pointerVertex.glsl";
 
 interface PlanetProps {
   disableEditing: boolean;
@@ -24,32 +24,46 @@ const Planet: React.FC<PlanetProps> = () => {
     depthBuffer: true,
   });
 
-    shadowMap.depthTexture.format = THREE.DepthFormat;
-    shadowMap.depthTexture.type = THREE.UnsignedShortType;
+  shadowMap.depthTexture.format = THREE.DepthFormat;
+  shadowMap.depthTexture.type = THREE.UnsignedShortType;
 
-  const heightmapA = useFBO(heightMapSize, heightMapSize, {generateMipmaps: true, // Enables mipmaps
-  minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
-  magFilter: THREE.LinearFilter, // Default for upscaling
-  wrapS: THREE.RepeatWrapping, // Optional wrapping modes
-  wrapT: THREE.RepeatWrapping});
-  const heightmapB = useFBO(heightMapSize, heightMapSize, {generateMipmaps: true, // Enables mipmaps
-  minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
-  magFilter: THREE.LinearFilter, // Default for upscaling
-  wrapS: THREE.RepeatWrapping, // Optional wrapping modes
-  wrapT: THREE.RepeatWrapping});
+  const heightmapA = useFBO(heightMapSize, heightMapSize, {
+    generateMipmaps: true, // Enables mipmaps
+    minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+    magFilter: THREE.LinearFilter, // Default for upscaling
+    wrapS: THREE.RepeatWrapping, // Optional wrapping modes
+    wrapT: THREE.RepeatWrapping,
+  });
+  const heightmapB = useFBO(heightMapSize, heightMapSize, {
+    generateMipmaps: true, // Enables mipmaps
+    minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+    magFilter: THREE.LinearFilter, // Default for upscaling
+    wrapS: THREE.RepeatWrapping, // Optional wrapping modes
+    wrapT: THREE.RepeatWrapping,
+  });
   const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
   const { camera, gl, clock } = useThree();
   const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
 
-  const indicatorRef = useRef<THREE.Mesh>(null); 
-  const [hoverPosition, setHoverPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
-  const [hoverNormal, setHoverNormal] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
-  const [hoverUV, setHoverUV] = useState<THREE.Vector2>(new THREE.Vector2(0, 0));
-  const [playerColor, setPlayerColor] = useState<THREE.Color>(new THREE.Color(Math.random(), Math.random(), Math.random()));
+  const indicatorRef = useRef<THREE.Mesh>(null);
+  const [hoverPosition, setHoverPosition] = useState<THREE.Vector3>(
+    new THREE.Vector3(0, 0, 0),
+  );
+  const [hoverNormal, setHoverNormal] = useState<THREE.Vector3>(
+    new THREE.Vector3(0, 0, 0),
+  );
+  const [hoverUV, setHoverUV] = useState<THREE.Vector2>(
+    new THREE.Vector2(0, 0),
+  );
+  const [playerColor, setPlayerColor] = useState<THREE.Color>(
+    new THREE.Color(Math.random(), Math.random(), Math.random()),
+  );
 
   const isDrawingRef = useRef(false);
-  const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
+  const [pendingPoints, setPendingPoints] = useState<
+    { uv: THREE.Vector2; strength: number }[]
+  >([]);
 
   // Shadow camera setup
   const ambientLightRef = useRef<number>(0.01);
@@ -83,9 +97,9 @@ const Planet: React.FC<PlanetProps> = () => {
     uShadowMap: { value: shadowMap.depthTexture },
     uLightPos: { value: new THREE.Vector3(0, 0, -3) },
     uEyePos: { value: camera.position },
-    uTime: { value: 0.0 }, // Keep time 
+    uTime: { value: 0.0 }, // Keep time
     uAmbientLight: { value: ambientLightRef.current },
-    uLightMatrix: { value: new THREE.Matrix4()  },
+    uLightMatrix: { value: new THREE.Matrix4() },
     uPlayerColor: { value: playerColor },
     uHoverUV: { value: hoverUV },
   }).current;
@@ -99,7 +113,13 @@ const Planet: React.FC<PlanetProps> = () => {
     },
     vertexShader: brushVertexShader,
     fragmentShader: brushFragmentShader,
-  });  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0x00ff00 })));
+  });
+  scene.add(
+    new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
+    ),
+  );
   const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), brushMaterial);
   quadScene.add(quadMesh);
 
@@ -112,19 +132,20 @@ const Planet: React.FC<PlanetProps> = () => {
       isShiftKeyPressed.current = event.shiftKey;
       isCtrlKeyPressed.current = event.ctrlKey;
     };
-  
+
     window.addEventListener("mousemove", updateMousePosition);
-  
+
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
   }, []);
 
   useFrame(() => {
-
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    mousePointer.current.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
-    mousePointer.current.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
+    mousePointer.current.x =
+      (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    mousePointer.current.y =
+      -(mousePosition.current.y / window.innerHeight) * 2 + 1;
 
     raycaster.current.setFromCamera(mousePointer.current, camera);
     const intersects = raycaster.current.intersectObject(meshRef.current);
@@ -138,7 +159,9 @@ const Planet: React.FC<PlanetProps> = () => {
 
       if (normal) {
         setHoverNormal(normal.clone());
-        setHoverPosition(point.clone().add(normal.clone().multiplyScalar(0.01)));
+        setHoverPosition(
+          point.clone().add(normal.clone().multiplyScalar(0.01)),
+        );
       }
     } else {
       setHoverPosition(null);
@@ -151,9 +174,9 @@ const Planet: React.FC<PlanetProps> = () => {
       const lookAtTarget = hoverPosition.clone().add(hoverNormal);
       indicatorRef.current.lookAt(lookAtTarget);
     }
-   
+
     if (lightRef.current) {
-     // Update light camera position to match directional light
+      // Update light camera position to match directional light
       lightRef.current.position.set(0, 0, -10);
       lightCamera.position.copy(lightRef.current.position);
       lightCamera.lookAt(0, 0, 0);
@@ -168,7 +191,7 @@ const Planet: React.FC<PlanetProps> = () => {
     universalMaterialUniforms.uHoverUV.value = hoverUV;
     universalMaterialUniforms.uLightMatrix.value.multiplyMatrices(
       lightCamera.projectionMatrix,
-      lightCamera.matrixWorldInverse
+      lightCamera.matrixWorldInverse,
     );
 
     // Render the scene from the light's perspective into the shadow map
@@ -181,7 +204,8 @@ const Planet: React.FC<PlanetProps> = () => {
 
     if (pendingPoints.length > 0) {
       // Choose the inactive buffer for writing
-      const nextHeightmap = activeHeightmap === heightmapA ? heightmapB : heightmapA;
+      const nextHeightmap =
+        activeHeightmap === heightmapA ? heightmapB : heightmapA;
       // Render each point to the heightmap
       for (const { uv, strength } of pendingPoints) {
         brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
@@ -202,7 +226,6 @@ const Planet: React.FC<PlanetProps> = () => {
     gl.setRenderTarget(null);
   });
 
-
   const handlePointerDown = () => {
     isDrawingRef.current = true;
   };
@@ -212,22 +235,23 @@ const Planet: React.FC<PlanetProps> = () => {
   };
 
   const handleTerrainEdit = () => {
-    if (isCtrlKeyPressed.current || !isDrawingRef.current || !meshRef.current ) return;
-    
+    if (isCtrlKeyPressed.current || !isDrawingRef.current || !meshRef.current)
+      return;
+
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
     mousePointer.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
-  
+
     // Perform raycasting
     raycaster.current.setFromCamera(mousePointer, camera);
     const intersects = raycaster.current.intersectObject(meshRef.current);
-  
+
     if (intersects.length > 0) {
       const { uv } = intersects[0];
       if (uv) {
-      const strength = isShiftKeyPressed.current ? -1 : 1;
+        const strength = isShiftKeyPressed.current ? -1 : 1;
 
-      // Append new point to the list
+        // Append new point to the list
         setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
       }
     }
@@ -235,13 +259,15 @@ const Planet: React.FC<PlanetProps> = () => {
 
   return (
     <group>
-      <mesh ref={meshRef} castShadow receiveShadow
+      <mesh
+        ref={meshRef}
+        castShadow
+        receiveShadow
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
       >
-        <icosahedronGeometry args={[1, 50]}
-      />
-      <shaderMaterial
+        <icosahedronGeometry args={[1, 50]} />
+        <shaderMaterial
           uniforms={universalMaterialUniforms}
           fragmentShader={planetFragmentShader}
           vertexShader={planetVertexShader}
@@ -259,7 +285,7 @@ const Planet: React.FC<PlanetProps> = () => {
           fragmentShader={vizFragmentShader}
           vertexShader={vizVertexShader}
         /> 
-        </> */}        
+        </> */}
       </mesh>
 
       <mesh ref={indicatorRef}>
@@ -273,8 +299,6 @@ const Planet: React.FC<PlanetProps> = () => {
           blending={THREE.NormalBlending}
         />
       </mesh>
-
-
     </group>
   );
 };

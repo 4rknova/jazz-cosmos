@@ -1,4 +1,4 @@
 // types.ts
 export interface TextureProps {
-	url: string;
+  url: string;
 }

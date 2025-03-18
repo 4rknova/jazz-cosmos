@@ -4,14 +4,14 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { apiKey } from "./apiKey.ts";
-import { JazzAccount } from "./schema.ts";
+import { CosmosAccount } from "./schema.ts";
 
 // We use this to identify the app in the passkey auth
 export const APPLICATION_NAME = "Jazz starter";
 
 declare module "jazz-react" {
   export interface Register {
-    Account: JazzAccount;
+    Account: CosmosAccount;
   }
 }
 
@@ -23,7 +23,7 @@ createRoot(document.getElementById("root")!).render(
         peer: `wss://cloud.jazz.tools/?key=${apiKey}`,
         when: "signedUp", // This way when the user hasn't signed up we store the data only locally
       }}
-      AccountSchema={JazzAccount}
+      AccountSchema={CosmosAccount}
     >
       <App />
     </JazzProvider>
