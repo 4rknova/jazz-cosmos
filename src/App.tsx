@@ -66,16 +66,16 @@ function App() {
           top: "20px",
           left: "20px",
           padding: "10px 15px",
-          background: "#222",
           border: "none",
           cursor: "pointer",
           fontSize: "16px",
           borderRadius: "5px"}}>
           
           <div className="text-white pb-4 w-full">
-            <Logo />
-            <h1 className="uppercase text-2xl font-bold text-center pb-5">Cosmos</h1>
-
+            <div className="flex justify-center items-center flex-col gap-5 bg-[url(/resources/logo.png)] bg-cover bg-center">
+              <div className="h-40">
+                <Logo />
+              </div>            </div>
             {isAuthenticated ? (
               <span>You're logged in.</span>
             ) : (

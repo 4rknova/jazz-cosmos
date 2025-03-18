@@ -1,12 +1,14 @@
 precision highp float;
 varying vec2 vUv;
 varying vec3 vNormal;
+varying vec4 vShadowCoord;
 uniform vec3 uLightPos;
 uniform vec3 uEyePos;
 uniform float uHeightmapSize;
 uniform sampler2D uHeightmap;
 uniform float uTime; 
 uniform float uAmbientLight;
+uniform sampler2D uShadowMap;
 
 // Constants for terrain configuration
 const float WATER_THRESHOLD = 0.001;   // Water level
@@ -21,6 +23,24 @@ const vec3 SAND_COLOR = vec3(0.9, 0.8, 0.6);     // Light Yellowish Sand
 const vec3 VALLEY_COLOR = vec3(0.2, 0.8, 0.2);   // Lush Green
 const vec3 LAND_COLOR = vec3(0.5, 0.4, 0.2);     // Brownish Rocky Land
 const vec3 MOUNTAIN_COLOR = vec3(0.8, 0.8, 0.8); // Snowy Mountains
+
+
+// Simple shadow calculation function
+float getShadowFactor(vec4 shadowCoord) {
+    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    projCoords = projCoords * 0.5 + 0.5; // Transform from NDC [-1,1] to [0,1]
+
+    // Get depth from shadow map
+    float closestDepth = texture2D(uShadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+
+    // Apply simple shadow bias
+    float bias = 0.005;
+    float shadow = currentDepth - bias > closestDepth ? 0.5 : 1.0;
+
+    return shadow;
+}
+
 
 // Get displacement from heightmap
 float displacement(vec2 vUv) {
@@ -65,29 +85,6 @@ float fbm(in vec3 p)
     f += 0.12500 * noise(4.0 * p);
     f += 0.06250 * noise(8.0 * p);
     return f;
-}
-
-// Ensure birds spawn **only** over valleys
-vec3 generateBirds(vec2 uv, float disp, float time) {
-   
-    // Create a grid for bird placement
-    vec2 gridPos = floor(uv * 400.0);  // Increase density
-    float birdSeed = hash(gridPos);   // Randomize bird positions
-
-    if (birdSeed > 0.96) {  // Only some areas have birds (4% chance per cell)
-        float birdAnimation = sin(time * 5.0 + birdSeed * 20.0) * 0.5 + 0.5; // Wing flap effect
-
-        vec2 birdMotion = vec2(sin(time + birdSeed * 10.0), cos(time + birdSeed * 15.0)) * 0.003; // Slight movement
-        
-        // Render birds as **high-contrast black dots**
-        float birdSize = 0.005 + birdAnimation * 0.002; // Birds get slightly bigger when flapping
-        vec2 birdPos = fract(uv * 40.0) - 0.5 + birdMotion; // Bird position within grid cell
-
-        float bird = step(length(birdPos), birdSize); // Hard dot, no smooth fading
-        return vec3(0.0) - bird; // Black birds
-    }
-
-    return vec3(0.0); // No bird here
 }
 
 // Improved procedural vegetation texture
@@ -181,9 +178,6 @@ vec3 terrainColor(float disp, vec2 uv) {
         color = generateMountainTexture2(uv, disp);
     }
 
-    // Add animated birds in valleys
-    color -= generateBirds(uv, disp, uTime);
-
     return color;
 
 }
@@ -192,10 +186,15 @@ void main() {
     float disp = displacement(vUv);
     vec3 color = terrainColor(disp, vUv);
 
+	// Calculate shadow factor
+    float shadowFactor = getShadowFactor(vShadowCoord);
+
     // Basic lighting (Lambertian shading)
     vec3 lightDir = normalize(-uLightPos);
     vec3 n = normalize(vNormal);
     color *= max(dot(lightDir, n), uAmbientLight); // Prevents excessive darkness
     
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color * shadowFactor, 1.0);
+
+	//gl_FragColor = vec4(vec3(1.0, 1.0,1.0) * shadowFactor, 1.0);
 }

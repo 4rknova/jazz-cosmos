@@ -5,10 +5,10 @@ import { useFBO } from "@react-three/drei";
 import * as THREE from "three";
 import planetVertexShader from "./shaders/planetVertex.glsl";
 import planetFragmentShader from "./shaders/planetFragment.glsl";
-import vizVertexShader from "./shaders/vizVertex.glsl";
-import vizFragmentShader from "./shaders/vizFragment.glsl";
 import brushVertexShader from "./shaders/brushVertex.glsl";
 import brushFragmentShader from "./shaders/brushFragment.glsl";
+import pointerVertexShader from "./shaders/pointerVertex.glsl";
+import pointerFragmentShader from "./shaders/pointerFragment.glsl";
 
 interface PlanetProps {
   disableEditing: boolean;
@@ -18,35 +18,76 @@ const Planet: React.FC<PlanetProps> = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   const heightmapPreviewRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
-  const rt0 = useFBO();
-  const shadowMap = useFBO(heightMapSize, heightMapSize);
-  const heightmapA = useFBO(heightMapSize, heightMapSize);
-  const heightmapB = useFBO(heightMapSize, heightMapSize);
+  const shadowMapSize = 2048;
+  const shadowMap = useFBO(shadowMapSize, shadowMapSize, {
+    depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize),
+    depthBuffer: true,
+  });
+
+    shadowMap.depthTexture.format = THREE.DepthFormat;
+    shadowMap.depthTexture.type = THREE.UnsignedShortType;
+
+  const heightmapA = useFBO(heightMapSize, heightMapSize, {generateMipmaps: true, // Enables mipmaps
+  minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+  magFilter: THREE.LinearFilter, // Default for upscaling
+  wrapS: THREE.RepeatWrapping, // Optional wrapping modes
+  wrapT: THREE.RepeatWrapping});
+  const heightmapB = useFBO(heightMapSize, heightMapSize, {generateMipmaps: true, // Enables mipmaps
+  minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+  magFilter: THREE.LinearFilter, // Default for upscaling
+  wrapS: THREE.RepeatWrapping, // Optional wrapping modes
+  wrapT: THREE.RepeatWrapping});
   const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
   const { camera, gl, clock } = useThree();
   const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
-  const pointer = useRef(new THREE.Vector2());
-  const lightPosition =  new THREE.Vector3(0, 0, -10);
+
+  const indicatorRef = useRef<THREE.Mesh>(null); 
+  const [hoverPosition, setHoverPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+  const [hoverNormal, setHoverNormal] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+  const [hoverUV, setHoverUV] = useState<THREE.Vector2>(new THREE.Vector2(0, 0));
+  const [playerColor, setPlayerColor] = useState<THREE.Color>(new THREE.Color(Math.random(), Math.random(), Math.random()));
 
   const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<{ uv: THREE.Vector2; strength: number }[]>([]);
 
   // Shadow camera setup
-  const ambientLightRef = useRef<number>(0.025);
+  const ambientLightRef = useRef<number>(0.01);
   const lightRef = useRef<THREE.DirectionalLight>(null);
-  const lightCamera = new THREE.OrthographicCamera(-5, 5, 5, -5, 1, 20);
+  const lightCamera = new THREE.OrthographicCamera(-15, 15, 15, -15, 0.1, 20);
 
+  useEffect(() => {
+    if (lightRef.current) {
+      lightRef.current.castShadow = true;
+      lightRef.current.shadow.mapSize.width = shadowMapSize;
+      lightRef.current.shadow.mapSize.height = shadowMapSize;
+      lightRef.current.shadow.camera.near = 0.1;
+      lightRef.current.shadow.camera.far = 5;
+      lightRef.current.shadow.camera.left = -5;
+      lightRef.current.shadow.camera.right = 5;
+      lightRef.current.shadow.camera.top = 5;
+      lightRef.current.shadow.camera.bottom = -2;
+      lightRef.current.shadow.camera.updateProjectionMatrix();
+      lightRef.current.position.set(0, 0, -3);
+      lightRef.current.target.position.set(0, 0, 0);
+      scene.add(lightRef.current);
+    }
+  }, [scene]);
+
+  const mousePointer = useRef(new THREE.Vector2());
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const universalMaterialUniforms = useRef({
     uHeightmap: { value: heightmapA.texture },
     uHeightmapSize: { value: heightMapSize },
-    uShadowMap: { value: shadowMap.texture },
-    uLightPos: { value: lightPosition },
+    uShadowMap: { value: shadowMap.depthTexture },
+    uLightPos: { value: new THREE.Vector3(0, 0, -3) },
     uEyePos: { value: camera.position },
     uTime: { value: 0.0 }, // Keep time 
     uAmbientLight: { value: ambientLightRef.current },
+    uLightMatrix: { value: new THREE.Matrix4()  },
+    uPlayerColor: { value: playerColor },
+    uHoverUV: { value: hoverUV },
   }).current;
 
   const brushMaterial = new THREE.ShaderMaterial({
@@ -80,28 +121,61 @@ const Planet: React.FC<PlanetProps> = () => {
   }, []);
 
   useFrame(() => {
-        
+
+    // Convert screen coordinates to normalized device coordinates (-1 to +1)
+    mousePointer.current.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    mousePointer.current.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
+
+    raycaster.current.setFromCamera(mousePointer.current, camera);
+    const intersects = raycaster.current.intersectObject(meshRef.current);
+
+    if (intersects.length > 0) {
+      const { point, normal, uv } = intersects[0];
+
+      if (uv) {
+        setHoverUV(uv);
+      }
+
+      if (normal) {
+        setHoverNormal(normal.clone());
+        setHoverPosition(point.clone().add(normal.clone().multiplyScalar(0.01)));
+      }
+    } else {
+      setHoverPosition(null);
+      setHoverNormal(null);
+    }
+
+    // Position and orient the indicator if hovering
+    if (hoverPosition && hoverNormal && indicatorRef.current) {
+      indicatorRef.current.position.copy(hoverPosition);
+      const lookAtTarget = hoverPosition.clone().add(hoverNormal);
+      indicatorRef.current.lookAt(lookAtTarget);
+    }
+   
     if (lightRef.current) {
-      lightRef.current.position = new THREE.Vector3(-10, 0, 10);
-      // Update light camera position to match directional light
+     // Update light camera position to match directional light
+      lightRef.current.position.set(0, 0, -10);
       lightCamera.position.copy(lightRef.current.position);
       lightCamera.lookAt(0, 0, 0);
       lightCamera.updateMatrixWorld(true);
     }
 
+    universalMaterialUniforms.uPlayerColor.value = playerColor;
     universalMaterialUniforms.uTime.value = clock.getElapsedTime();
     universalMaterialUniforms.uEyePos.value = camera.position;
     universalMaterialUniforms.uHeightmap.value = activeHeightmap.texture;
-
+    universalMaterialUniforms.uShadowMap.value = shadowMap.depthTexture;
+    universalMaterialUniforms.uHoverUV.value = hoverUV;
+    universalMaterialUniforms.uLightMatrix.value.multiplyMatrices(
+      lightCamera.projectionMatrix,
+      lightCamera.matrixWorldInverse
+    );
 
     // Render the scene from the light's perspective into the shadow map
     gl.setRenderTarget(shadowMap);
-    gl.clear();
+    gl.clear(true, true, true);
     gl.render(scene, lightCamera);
-
-
-    gl.setRenderTarget(rt0);
-    gl.render(scene, camera);
+    gl.setRenderTarget(null);
 
     handleTerrainEdit();
 
@@ -141,11 +215,11 @@ const Planet: React.FC<PlanetProps> = () => {
     if (isCtrlKeyPressed.current || !isDrawingRef.current || !meshRef.current ) return;
     
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    pointer.current.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
-    pointer.current.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
+    mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    mousePointer.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
   
     // Perform raycasting
-    raycaster.current.setFromCamera(pointer.current, camera);
+    raycaster.current.setFromCamera(mousePointer, camera);
     const intersects = raycaster.current.intersectObject(meshRef.current);
   
     if (intersects.length > 0) {
@@ -165,7 +239,7 @@ const Planet: React.FC<PlanetProps> = () => {
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
       >
-        <icosahedronGeometry args={[1, 100]}
+        <icosahedronGeometry args={[1, 50]}
       />
       <shaderMaterial
           uniforms={universalMaterialUniforms}
@@ -178,14 +252,29 @@ const Planet: React.FC<PlanetProps> = () => {
         position={[-2.5, -1.5, 0]}
         scale={[1, 1, 1]}
       >
-        
-        {/* <planeGeometry args={[2, 1]} />
+        {/* <>
+        <planeGeometry args={[2, 1]} />
         <shaderMaterial
           uniforms={universalMaterialUniforms}
           fragmentShader={vizFragmentShader}
           vertexShader={vizVertexShader}
-        />     */}
+        /> 
+        </> */}        
       </mesh>
+
+      <mesh ref={indicatorRef}>
+        <planeGeometry args={[0.1, 0.1]} />
+        <shaderMaterial
+          uniforms={universalMaterialUniforms}
+          fragmentShader={pointerFragmentShader}
+          vertexShader={pointerVertexShader}
+          transparent={true}
+          depthWrite={false}
+          blending={THREE.NormalBlending}
+        />
+      </mesh>
+
+
     </group>
   );
 };

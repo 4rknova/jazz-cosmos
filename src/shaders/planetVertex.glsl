@@ -1,8 +1,10 @@
 precision highp float;
 varying vec2 vUv;
 varying vec3 vNormal;
+varying vec4 vShadowCoord;
 uniform float uHeightmapSize;
 uniform sampler2D uHeightmap;
+uniform mat4 uLightMatrix;
 
 float displacement(vec2 vUv) {
     return texture2D(uHeightmap, vUv).r;
@@ -19,23 +21,8 @@ vec3 distorted(vec3 p) {
 }
 
 void main() {
-    float tangentFactor = 1.0 / uHeightmapSize * 2.0;
-
     vUv = uv;
     vec3 pos = distorted(position); 
-
-    vec3 n = normal;
-    /*
-    vec3 distortedPosition = pos;
-    vec3 tangent1 = orthogonal(n);
-    vec3 tangent2 = normalize(cross(n, tangent1));
-    vec3 nearby1 = position + tangent1 * tangentFactor;
-    vec3 nearby2 = position + tangent2 * tangentFactor;
-    vec3 distorted1 = distorted(nearby1);
-    vec3 distorted2 = distorted(nearby2);
-    vNormal = normalize(cross(distorted1 - distortedPosition, distorted2 - distortedPosition));
-    */
-    vNormal = normal;
-
+    vShadowCoord = uLightMatrix * vec4(position, 1.0);vNormal = normal;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
