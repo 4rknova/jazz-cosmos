@@ -1,4 +1,4 @@
-import { Account, CoFeed, CoList, CoMap, co } from "jazz-tools";
+import { Account, CoFeed, CoList, CoMap, co, Profile, Group } from "jazz-tools";
 
 export class Vec3 extends CoMap {
   x = co.number;
@@ -39,8 +39,15 @@ export class AccountRoot extends CoMap {
   camera = co.ref(Camera);
 }
 
+export class AccountProfile extends Profile {
+  name = co.string;
+  simulation = co.ref(Simulation);
+  simulationGroup = co.ref(Group);
+}
+
 export class CosmosAccount extends Account {
   root = co.ref(AccountRoot);
+  profile = co.ref(AccountProfile);
 
   migrate(this: CosmosAccount) {
     if (this.root === undefined) {
@@ -52,6 +59,19 @@ export class CosmosAccount extends Account {
             z: 5,
           }),
         }),
+      });
+    }
+    if (this.profile === undefined) {
+      const group = Group.create();
+      group.addMember("everyone", "writer");
+
+      this.profile = AccountProfile.create({
+        name: "",
+        simulation: Simulation.create({
+          cursorFeed: CursorFeed.create([]),
+          editFeed: EditFeed.create([]),
+        }),
+        simulationGroup: group,
       });
     }
   }

@@ -38,8 +38,6 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
     depthBuffer: true,
   });
 
-  console.log(simulation?.cursorFeed[me.id]?.value?.position?.x);
-
   shadowMap.depthTexture.format = THREE.DepthFormat;
   shadowMap.depthTexture.type = THREE.UnsignedShortType;
 

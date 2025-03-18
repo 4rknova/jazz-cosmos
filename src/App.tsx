@@ -74,7 +74,7 @@ function App() {
           cursorFeed: CursorFeed.create([], { owner: me }),
           editFeed: EditFeed.create([], { owner: me }),
         },
-        { owner: me },
+        { owner: me.profile?.simulationGroup ?? me },
       );
 
       setCurrentSimulation(simulation);
