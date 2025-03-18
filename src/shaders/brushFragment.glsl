@@ -5,7 +5,7 @@ uniform float uBrushSize;
 uniform float uBrushStrength;
 
 #define BRUSH_QUANTUM 0.01
-#define MAX_HEIGHT 0.1
+#define MAX_HEIGHT 0.075
 
 void main() {
     vec4 original = texture2D(uHeightmap, vUv);

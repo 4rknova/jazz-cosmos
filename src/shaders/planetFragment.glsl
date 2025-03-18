@@ -167,10 +167,10 @@ vec3 terrainColor(float disp, vec2 uv) {
     if (disp >= WATER_THRESHOLD && disp < SAND_THRESHOLD) {
         color = mix(WATER_COLOR, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
     }
-    else if (disp >= SAND_THRESHOLD && disp < VALLEY_THRESHOLD) {
+    else if (disp >= SAND_THRESHOLD && disp < VALLEY_THRESHOLD + 0.01 * fbm(vec3(uv * 400.0, 1.0))) {
         color = mix(SAND_COLOR, VALLEY_COLOR, smoothstep(SAND_THRESHOLD, VALLEY_THRESHOLD, disp));
     }
-    else if (disp >= VALLEY_THRESHOLD && disp < LAND_THRESHOLD) {
+    else if (disp >= VALLEY_THRESHOLD && disp < LAND_THRESHOLD + 0.02 * fbm(vec3(uv * 300.0, 1.0))) {
         color = generateVegetationTexture(uv, disp);
     }
     else if (disp >= LAND_THRESHOLD && disp < MOUNTAIN_THRESHOLD - 0.04 * fbm(vec3(uv * 1000.0, 1.0))) {
