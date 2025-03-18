@@ -1,10 +1,9 @@
 import { useFBO } from "@react-three/drei";
-import { ThreeEvent, Vector3, useFrame, useThree } from "@react-three/fiber";
+import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useAccount } from "jazz-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Cursor, CursorFeed, Vec3 } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
@@ -135,19 +134,6 @@ const Planet: React.FC<PlanetProps> = () => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
       isCtrlKeyPressed.current = event.ctrlKey;
-
-      // Update cursor position in CursorFeed if available
-      if (cursorFeed && hoverPosition) {
-        const position = Vec3.create({
-          x: hoverPosition.x,
-          y: hoverPosition.y,
-          z: hoverPosition.z,
-        });
-        const cursor = Cursor.create({
-          position,
-        });
-        cursorFeed.push(cursor);
-      }
     };
 
     const handleMouseDown = (event: MouseEvent) => {
@@ -194,19 +180,6 @@ const Planet: React.FC<PlanetProps> = () => {
           .add(normal.clone().multiplyScalar(0.01));
         setHoverNormal(normal.clone());
         setHoverPosition(newPosition);
-
-        // Update cursor position in CursorFeed if available
-        if (cursorFeed) {
-          const position = Vec3.create({
-            x: newPosition.x,
-            y: newPosition.y,
-            z: newPosition.z,
-          });
-          const cursor = Cursor.create({
-            position,
-          });
-          cursorFeed.push(cursor);
-        }
       }
     } else {
       setHoverPosition(null);
