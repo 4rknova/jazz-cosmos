@@ -4,22 +4,19 @@ uniform vec2 uUV;
 uniform float uBrushSize;
 uniform float uBrushStrength;
 
+#define BRUSH_QUANTUM 0.01
+#define MAX_HEIGHT 0.1
+
 void main() {
     vec4 original = texture2D(uHeightmap, vUv);
     
     float distA = distance(vUv, uUV);
-    float distB = distance(vUv, vec2(1.0-uUV.x, uUV.y));
-
+    
     if (distA < uBrushSize) {
         original.r += 0.05 * uBrushStrength * (1.0 - distA / uBrushSize);
     }
 
-
-    if (distB < uBrushSize) {
-        original.r += 0.05 * uBrushStrength * (1.0 - distB / uBrushSize);
-    }
-
-    original.r = clamp(original.r, 0.0, 0.25);
+    original.r = clamp(original.r, 0.0, MAX_HEIGHT);
     original.gba = vec3(0.0,0.0,0.0);
 
     gl_FragColor = original;

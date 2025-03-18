@@ -1,18 +1,28 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { extend } from "@react-three/fiber";
+import starsVertexShader from "./shaders/starsVertex.glsl";
+import starsFragmentShader from "./shaders/starsFragment.glsl";
 
 const Stars = () => {
+
   const starGeometry = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
     const vertices = [];
-    for (let i = 0; i < 1000; i++) {
-      const x = (Math.random() - 0.5) * 500;
+    const intensities = []; // Store intensity values
+
+    for (let i = 0; i < 200; i++) {  // 200 stars
+      const x = (Math.random() - 0.5) * 500; // Range from -125 to 125
       const y = (Math.random() - 0.5) * 500;
       const z = (Math.random() - 0.5) * 500;
       vertices.push(x, y, z);
+
+      const intensity = Math.random() * 0.75 + 0.25; // Random intensity (0.2 - 1.0)
+      intensities.push(intensity);
     }
+
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute("intensity", new THREE.Float32BufferAttribute(intensities, 1)); // Add intensity attribute
+
     return geometry;
   }, []);
 
@@ -21,28 +31,10 @@ const Stars = () => {
       new THREE.ShaderMaterial({
         uniforms: {
           color: { value: new THREE.Color(0xffffff) },
-          size: { value: 5.0 },
+          size: { value: 10.0 },
         },
-        vertexShader: `
-          uniform float size;
-          varying vec3 vColor;
-
-          void main() {
-            vColor = vec3(1.0, 1.0, 1.0); // White color
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            gl_PointSize = size * (300.0 / -mvPosition.z); // Scale size based on depth
-            gl_Position = projectionMatrix * mvPosition;
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vColor;
-
-          void main() {
-            float dist = length(gl_PointCoord - vec2(0.5));
-            if (dist > 0.5) discard;
-            gl_FragColor = vec4(vColor, 1.0 - dist * 2.0);
-          }
-        `,
+        vertexShader: starsVertexShader,
+        fragmentShader: starsFragmentShader,
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,

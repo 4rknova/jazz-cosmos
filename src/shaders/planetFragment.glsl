@@ -8,89 +8,195 @@ uniform sampler2D uHeightmap;
 uniform float uTime; 
 uniform float uAmbientLight;
 
-#define MAX_ITER 5
-#define TAU 6.28318530718
+// Constants for terrain configuration
+const float WATER_THRESHOLD = 0.001;   // Water level
+const float SAND_THRESHOLD = 0.0025;   // Very thin strip for shoreline
+const float VALLEY_THRESHOLD = 0.01;   // Green valleys
+const float LAND_THRESHOLD = 0.02;     // Rocky land
+const float MOUNTAIN_THRESHOLD = 0.08; // Snowy mountains
 
+// Terrain Colors
+const vec3 WATER_COLOR = vec3(0.34, 0.4, 0.9);   // Deep Blue
+const vec3 SAND_COLOR = vec3(0.9, 0.8, 0.6);     // Light Yellowish Sand
+const vec3 VALLEY_COLOR = vec3(0.2, 0.8, 0.2);   // Lush Green
+const vec3 LAND_COLOR = vec3(0.5, 0.4, 0.2);     // Brownish Rocky Land
+const vec3 MOUNTAIN_COLOR = vec3(0.8, 0.8, 0.8); // Snowy Mountains
+
+// Get displacement from heightmap
 float displacement(vec2 vUv) {
     return texture2D(uHeightmap, vUv).r;
 }
 
+// Simple hash function for randomness
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+// Simple hash function for randomness
 float hash(in vec3 p)
 {
     return fract(sin(dot(p,vec3(127.1,311.7, 321.4)))*43758.5453123);
 }
 
+// Simple 3D noise function (value noise)
 float noise(in vec3 p)
 {
-	//p.z += uTime * .25;
-	
     vec3 i = floor(p);
-	vec3 f = fract(p); 
-	f *= f * (3.-2.*f);
-
-    vec2 c = vec2(0,1);
-
+    vec3 f = fract(p); 
+    f *= f * (3.0 - 2.0 * f);
+    
+    vec2 c = vec2(0.0, 1.0);
     return mix(
-		mix(mix(hash(i + c.xxx), hash(i + c.yxx),f.x),
-			mix(hash(i + c.xyx), hash(i + c.yyx),f.x),
-			f.y),
-		mix(mix(hash(i + c.xxy), hash(i + c.yxy),f.x),
-			mix(hash(i + c.xyy), hash(i + c.yyy),f.x),
-			f.y),
-		f.z);
+        mix(mix(hash(i + c.xxx), hash(i + c.yxx), f.x),
+            mix(hash(i + c.xyx), hash(i + c.yyx), f.x),
+            f.y),
+        mix(mix(hash(i + c.xxy), hash(i + c.yxy), f.x),
+            mix(hash(i + c.xyy), hash(i + c.yyy), f.x),
+            f.y),
+        f.z);
 }
 
+// Fractional Brownian Motion to generate more complex noise patterns
 float fbm(in vec3 p)
 {
-	float f = 0.;
-	f += .50000 * noise(1. * p);
-	f += .25000 * noise(2. * p);
-	f += .12500 * noise(4. * p);
-	f += .06250 * noise(8. * p);
-	return f;
+    float f = 0.0;
+    f += 0.50000 * noise(1.0 * p);
+    f += 0.25000 * noise(2.0 * p);
+    f += 0.12500 * noise(4.0 * p);
+    f += 0.06250 * noise(8.0 * p);
+    return f;
+}
+
+// Ensure birds spawn **only** over valleys
+vec3 generateBirds(vec2 uv, float disp, float time) {
+   
+    // Create a grid for bird placement
+    vec2 gridPos = floor(uv * 400.0);  // Increase density
+    float birdSeed = hash(gridPos);   // Randomize bird positions
+
+    if (birdSeed > 0.96) {  // Only some areas have birds (4% chance per cell)
+        float birdAnimation = sin(time * 5.0 + birdSeed * 20.0) * 0.5 + 0.5; // Wing flap effect
+
+        vec2 birdMotion = vec2(sin(time + birdSeed * 10.0), cos(time + birdSeed * 15.0)) * 0.003; // Slight movement
+        
+        // Render birds as **high-contrast black dots**
+        float birdSize = 0.005 + birdAnimation * 0.002; // Birds get slightly bigger when flapping
+        vec2 birdPos = fract(uv * 40.0) - 0.5 + birdMotion; // Bird position within grid cell
+
+        float bird = step(length(birdPos), birdSize); // Hard dot, no smooth fading
+        return vec3(0.0) - bird; // Black birds
+    }
+
+    return vec3(0.0); // No bird here
+}
+
+// Improved procedural vegetation texture
+vec3 generateVegetationTexture(vec2 uv, float disp)
+{
+    // Base noise for vegetation density variation
+    float vegetationNoise = fbm(vec3(uv * 700.0, 2.0)); // General pattern
+    float fineDetail = fbm(vec3(uv * 2000.0, 3.5)); // Small fine details
+
+    // Control vegetation thickness with smooth transitions
+    float vegetationDensity = smoothstep(0.2, 0.8, vegetationNoise + fineDetail * 0.2);
+
+    // Base grass and forest colors
+    vec3 brightGrass = vec3(0.2, 0.9, 0.2);  // Lush green grass
+    vec3 deepForest = vec3(0.1, 0.7, 0.1);   // Darker forest regions
+
+    // Blend between grassland and dense forest patches
+    vec3 vegetationColor = mix(brightGrass, deepForest, vegetationDensity);
+
+    // Introduce slight yellowish patches for dry grass effects
+    vec3 dryGrass = vec3(0.6, 0.7, 0.2);
+    vegetationColor = mix(vegetationColor, dryGrass, fineDetail * 0.1);
+
+    // Final vegetation texture with variation
+    return vegetationColor;
+}
+
+// Procedural vegetation color generation based on noise
+vec3 generateVegetationColor2(vec2 uv, float disp)
+{
+    // Use FBM to generate random patchy vegetation
+    float vegetationNoise = fbm(vec3(uv * 1000.0, 1.0));
+    vec3 baseVegetationColor = VALLEY_COLOR; // Bright green
+    return mix(baseVegetationColor, vec3(0.1, 0.6, 0.2), vegetationNoise); // Add variation in color
+}
+
+
+// Improved procedural mountain texture (rocky or snowy)
+vec3 generateGroundTexture(vec2 uv, float disp)
+{
+    // High-frequency noise for detailed rocky effect
+    float rockNoise = fbm(vec3(uv * 1000.0, 2.5)); // Sharper detail for rocks
+    float snowNoise = fbm(vec3(uv * 500.0, 1.0));  // Softer detail for snow accumulation
+
+    // Base rocky texture - higher noise contrast for rugged look
+    vec3 rockTexture = mix(vec3(0.4, 0.35, 0.3), vec3(0.6, 0.6, 0.6), rockNoise);
+    
+    // Control snow accumulation based on height and noise
+    float snowBlend = smoothstep(0.5, 0.7, disp + snowNoise * 0.2);
+
+    // Final blend: Rocks → Snow
+    return mix(rockTexture, vec3(1.0, 1.0, 1.0), snowBlend); // Snow is pure white
+}
+
+// Generate procedural mountain texture (rocky or snowy texture)
+vec3 generateMountainTexture2(vec2 uv, float disp)
+{
+    // Scale the UV coordinates for higher texture detail on mountains
+    float noiseValue = fbm(vec3(uv * 500.0, 2.0)); // FBM noise
+    float textureValue = smoothstep(0.4, 0.6, noiseValue); // Control the texture roughness
+
+    // Add variation based on displacement for rocky or snowy effects
+    vec3 baseMountainTexture = mix(MOUNTAIN_COLOR, vec3(1.0, 1.0, 1.0), textureValue); // Lighter texture for snow
+
+    // Create a more rough, rocky texture for mountain areas
+    return mix(baseMountainTexture, vec3(0.7, 0.7, 0.7), disp * 2.0); // Adjust the mix based on displacement
+}
+
+// Terrain color blending function
+vec3 terrainColor(float disp, vec2 uv) {
+    vec3 color;
+
+    if (disp < WATER_THRESHOLD) {
+        return WATER_COLOR;  // Water
+    }
+    
+    if (disp >= WATER_THRESHOLD && disp < SAND_THRESHOLD) {
+        color = mix(WATER_COLOR, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
+    }
+    else if (disp >= SAND_THRESHOLD && disp < VALLEY_THRESHOLD) {
+        color = mix(SAND_COLOR, VALLEY_COLOR, smoothstep(SAND_THRESHOLD, VALLEY_THRESHOLD, disp));
+    }
+    else if (disp >= VALLEY_THRESHOLD && disp < LAND_THRESHOLD) {
+        color = generateVegetationTexture(uv, disp);
+    }
+    else if (disp >= LAND_THRESHOLD && disp < MOUNTAIN_THRESHOLD) {
+		vec3 groundTexture = generateGroundTexture(uv,disp);
+        color = mix(groundTexture, MOUNTAIN_COLOR, smoothstep(LAND_THRESHOLD, MOUNTAIN_THRESHOLD, disp));
+    }
+    else {
+        color = generateMountainTexture2(uv, disp);
+    }
+
+    // Add animated birds in valleys
+    color -= generateBirds(uv, disp, uTime);
+
+    return color;
+
 }
 
 void main() {
-    float displacement = displacement(vUv);
-    
-    vec3 color = vec3(0.04, 0.1, 1.0);
+    float disp = displacement(vUv);
+    vec3 color = terrainColor(disp, vUv);
 
-    if (displacement > 0.0) {
-     color = vec3(0.34, 0.4, 0.42) * (displacement + 0.1)  * 5.0;
-    }
-    else
-    {
-        float time = uTime * .25;
-        // uv should be the 0-1 uv of texture...
-        vec2 uv = vUv * 1.0;
-
-        uv.x = fbm(vec3(uv.xy,1.0));
-        uv.y = fbm(vec3(1.0, uv.xy));
-    
-        vec2 p = mod(uv*TAU, TAU)-250.0;
-	    vec2 i = vec2(p);
-	    float c = 1.0;
-	    float inten = .005;
-
-	    for (int n = 0; n < MAX_ITER; n++) 
-	    {
-    		float t = time * (1.0 - (1.5 / float(n+1)));
-		    i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-		    c += 1.0/length(vec2(p.x / (sin(i.x+t)/inten),p.y / (cos(i.y+t)/inten)));
-	    }
-	    c /= float(MAX_ITER);
-	    c = 1.17-pow(c, 0.9);
-	    vec3 colour = vec3(pow(abs(c), 8.0));
-        colour = clamp(colour + vec3(0.0, 0.25, 0.5), 0.0, 1.0);
-        color = colour;
-    }
-
-
+    // Basic lighting (Lambertian shading)
     vec3 lightDir = normalize(-uLightPos);
-
     vec3 n = normalize(vNormal);
-    color *= dot(lightDir, n);
-    color += vec3(1,1,1) * uAmbientLight;
-        
+    color *= max(dot(lightDir, n), 0.3); // Prevents excessive darkness
+    color += vec3(1.0, 1.0, 1.0) * uAmbientLight; // Ambient lighting
+
     gl_FragColor = vec4(color, 1.0);
 }
