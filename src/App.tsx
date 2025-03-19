@@ -1,4 +1,4 @@
-import { useAccount, useCoState } from "jazz-react";
+import { useAccount, useCoState, useIsAuthenticated } from "jazz-react";
 import { Group, ID } from "jazz-tools";
 import { useEffect, useState } from "react";
 import Canvas from "./components/Canvas.tsx";
@@ -7,7 +7,8 @@ import { CursorFeed, EditFeed, Simulation } from "./schema";
 function App() {
   const simulationID = "co_zPEkJj8MosPKZaWYHpv24DHXgdm" as ID<Simulation>;
   const simulation = useCoState(Simulation, simulationID);
-
+  const { me, logOut } = useAccount();
+  const isAuthenticated = useIsAuthenticated();
   const [loadedSimulation, setLoadedSimulation] = useState<Simulation | null>(
     null,
   );
@@ -43,6 +44,17 @@ function App() {
           <div color="white">Loading...</div>
         )}
         {loadedSimulation && <Canvas simulationID={loadedSimulation.id} />}
+
+        {isAuthenticated && (
+          <div className="absolute top-5 left-5 bg-gray-900/50 backdrop-blur-sm p-4 rounded-lg shadow-lg">
+            <button
+              onClick={logOut}
+              className="bg-white text-black px-4 py-2 rounded-md hover:bg-gray-100 transition-colors font-medium"
+            >
+              Log Out
+            </button>
+          </div>
+        )}
 
         {/* Wireframe Toggle Button */}
         {/* <div
