@@ -41,8 +41,6 @@ export class AccountRoot extends CoMap {
 
 export class AccountProfile extends Profile {
   name = co.string;
-  simulation = co.ref(Simulation);
-  simulationGroup = co.ref(Group);
 }
 
 export class CosmosAccount extends Account {
@@ -62,16 +60,8 @@ export class CosmosAccount extends Account {
       });
     }
     if (this.profile === undefined) {
-      const group = Group.create();
-      group.addMember("everyone", "writer");
-
       this.profile = AccountProfile.create({
         name: "",
-        simulation: Simulation.create({
-          cursorFeed: CursorFeed.create([]),
-          editFeed: EditFeed.create([]),
-        }),
-        simulationGroup: group,
       });
     }
   }

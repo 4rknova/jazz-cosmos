@@ -4,7 +4,10 @@ import { Logo } from "./components/Logo.tsx";
 import Canvas from "./components/Canvas.tsx";
 
 function App() {
-  const { me } = useAccount({ profile: {}, root: {} });
+  const { me } = useAccount({
+    profile: {},
+    root: { camera: { position: {} } },
+  });
   const isAuthenticated = useIsAuthenticated();
 
   // Default camera position to use if none is saved
