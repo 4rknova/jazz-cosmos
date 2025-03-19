@@ -1,7 +1,9 @@
 import { useAccount, useCoState, useIsAuthenticated } from "jazz-react";
 import { Group, ID } from "jazz-tools";
 import { useEffect, useState } from "react";
+import { AuthButton } from "./components/AuthButton.tsx";
 import Canvas from "./components/Canvas.tsx";
+import { Logo } from "./components/Logo.tsx";
 import { CursorFeed, EditFeed, Simulation } from "./schema";
 
 function App() {
@@ -45,16 +47,13 @@ function App() {
         )}
         {loadedSimulation && <Canvas simulationID={loadedSimulation.id} />}
 
-        {isAuthenticated && (
-          <div className="absolute top-5 left-5 bg-gray-900/50 backdrop-blur-sm p-4 rounded-lg shadow-lg">
-            <button
-              onClick={logOut}
-              className="bg-white text-black px-4 py-2 rounded-md hover:bg-gray-100 transition-colors font-medium"
-            >
-              Log Out
-            </button>
-          </div>
-        )}
+        <div className="absolute top-4 left-4 p-3 overflow-hidden backdrop-blur-xl backdrop-opacity-50 bg-white dark:bg-black border rounded-xl shadow-sm flex flex-col items-center justify-center">
+          <Logo />
+          <h1 className="font-display text-stone-950 dark:text-white mb-2">
+            Cosmos
+          </h1>
+          <AuthButton />
+        </div>
 
         {/* Wireframe Toggle Button */}
         {/* <div
