@@ -5,17 +5,17 @@ import { ID } from "jazz-tools";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { Cursor, Simulation, Vec3 } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import pointerFragmentShader from "../shaders/pointerFragment.glsl";
 import pointerVertexShader from "../shaders/pointerVertex.glsl";
-import { Cursor, Simulation, Vec3 } from "../schema";
 
 interface PlanetProps {
   disableEditing: boolean;
-  simulationID?: ID<Simulation>;
+  simulationID: ID<Simulation>;
 }
 
 const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
@@ -169,6 +169,34 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
     };
   }, []);
 
+  const [cursors, setCursors] = useState<Cursor[]>([]);
+
+  useEffect(() => {
+    if (simulation?.cursorFeed) {
+      setCursors(
+        Object.values(simulation.cursorFeed.perSession)
+          .map((cursor) => cursor.value)
+          .filter((cursor) => cursor !== null),
+      );
+    }
+  }, [simulation?.cursorFeed]);
+
+  const pushCursor = (position: THREE.Vector3) => {
+    if (!me.sessionID || !simulation || !simulation.cursorFeed) return;
+
+    simulation.cursorFeed.push(
+      Cursor.create(
+        {
+          position: Vec3.create(
+            { x: position.x, y: position.y, z: position.z },
+            { owner: simulation._owner },
+          ),
+        },
+        { owner: simulation._owner },
+      ),
+    );
+  };
+
   useFrame(() => {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     mousePointer.current.x =
@@ -200,15 +228,7 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
 
     // Position and orient the indicator if hovering
     if (hoverPosition && hoverNormal && indicatorRef.current) {
-      simulation?.cursorFeed.push(
-        Cursor.create({
-          position: Vec3.create({
-            x: hoverPosition.x,
-            y: hoverPosition.y,
-            z: hoverPosition.z,
-          }),
-        }),
-      );
+      pushCursor(hoverPosition); // TODO: Offload this
 
       indicatorRef.current.position.copy(hoverPosition);
       const lookAtTarget = hoverPosition.clone().add(hoverNormal);
@@ -351,16 +371,19 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
         />
       </mesh>
 
-      {Object.values(simulation?.cursorFeed ?? {}).map((cursor, i) => {
-        if (cursor._owner?.id !== me?.id) return;
+      {cursors.map((cursor, i) => {
+        // if (cursor._owner?.id !== me?.id) return;
+        if (
+          !cursor.position ||
+          !cursor.position.x ||
+          !cursor.position.y ||
+          !cursor.position.z
+        )
+          return;
         return (
           <mesh
             key={i}
-            position={[
-              cursor.value.position.x,
-              cursor.value.position.y,
-              cursor.value.position.z,
-            ]}
+            position={[cursor.position.x, cursor.position.y, cursor.position.z]}
           >
             <planeGeometry args={[0.1, 0.1]} />
             <meshBasicMaterial color={0x00ff00} />

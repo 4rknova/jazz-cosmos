@@ -1,25 +1,51 @@
-import { useAccount, useIsAuthenticated } from "jazz-react";
-import { AuthButton } from "./components/AuthButton.tsx";
-import { Logo } from "./components/Logo.tsx";
+import { useAccount, useCoState } from "jazz-react";
+import { Group, ID } from "jazz-tools";
+import { useEffect, useState } from "react";
 import Canvas from "./components/Canvas.tsx";
+import { CursorFeed, EditFeed, Simulation } from "./schema";
 
 function App() {
-  const { me } = useAccount({
-    profile: {},
-    root: { camera: { position: {} } },
-  });
-  const isAuthenticated = useIsAuthenticated();
+  const simulationID = "co_zPEkJj8MosPKZaWYHpv24DHXgdm" as ID<Simulation>;
+  const simulation = useCoState(Simulation, simulationID);
 
-  // Default camera position to use if none is saved
-  const defaultCameraPosition = { x: 5, y: 2, z: 5 };
+  const [loadedSimulation, setLoadedSimulation] = useState<Simulation | null>(
+    null,
+  );
+
+  // Bootstrap the first simulation
+  useEffect(() => {
+    // If the simulation is null, create a new one
+    if (simulation === null) {
+      const group = Group.create();
+      group.addMember("everyone", "writer");
+
+      const newSimulation = Simulation.create(
+        {
+          cursorFeed: CursorFeed.create([], { owner: group }),
+          editFeed: EditFeed.create([], { owner: group }),
+        },
+        {
+          owner: group,
+          unique: "jazz-cosmos-public-simulation-test-1055",
+        },
+      );
+      setLoadedSimulation(newSimulation);
+    }
+    if (simulation) {
+      setLoadedSimulation(simulation);
+    }
+  }, [simulation, simulationID]);
 
   return (
     <>
       <main className="w-full h-dvh bg-black">
-        <Canvas />
+        {!(simulation && loadedSimulation) && (
+          <div color="white">Loading...</div>
+        )}
+        {loadedSimulation && <Canvas simulationID={loadedSimulation.id} />}
 
         {/* Wireframe Toggle Button */}
-        <div
+        {/* <div
           style={{
             position: "absolute",
             top: "20px",
@@ -63,7 +89,7 @@ function App() {
           <div className="flex justify-center items-center flex-col gap-5">
             <AuthButton />
           </div>
-        </div>
+        </div> */}
       </main>
     </>
   );

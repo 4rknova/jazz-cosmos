@@ -1,13 +1,16 @@
-import { useAccount, useIsAuthenticated } from "jazz-react";
+import { useAccount } from "jazz-react";
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
+import type { ID } from "jazz-tools";
+import { Simulation } from "../schema";
 
-export default function CanvasComponent() {
+export default function CanvasComponent({
+  simulationID,
+}: { simulationID: ID<Simulation> }) {
   const { me } = useAccount({ profile: {}, root: {} });
-  const isAuthenticated = useIsAuthenticated();
 
   // Default camera position to use if none is saved
   const defaultCameraPosition = { x: 5, y: 2, z: 5 };
@@ -18,6 +21,7 @@ export default function CanvasComponent() {
     y: number;
     z: number;
   }) => {
+    if (!me) return;
     if (me?.root?.camera?.position) {
       // Update camera position in profile
       me.root.camera.position.x = position.x;
@@ -64,7 +68,7 @@ export default function CanvasComponent() {
         shadow-camera-bottom={-10}
       />
       <Stars />
-      <Planet disableEditing={false} />
+      <Planet disableEditing={false} simulationID={simulationID} />
       <CameraController onCameraChange={handleCameraChange} />
     </Canvas>
   );
