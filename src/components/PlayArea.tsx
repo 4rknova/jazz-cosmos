@@ -4,12 +4,10 @@ import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
-import type { ID } from "jazz-tools";
-import { Simulation } from "../schema";
 
-export default function CanvasComponent({
-  simulationID,
-}: { simulationID: ID<Simulation> }) {
+export default function PlayAreaComponent({
+  isFrozen,
+}: { isFrozen: boolean }) {
   const { me } = useAccount({ profile: {}, root: {} });
 
   // Default camera position to use if none is saved
@@ -22,11 +20,17 @@ export default function CanvasComponent({
     z: number;
   }) => {
     if (!me) return;
-    if (me?.root?.camera?.position) {
+    
+    console.log("session",  me?.root?.camera?.byMe);
+    const session = me?.root?.camera?.inCurrentSession
+    if (session) {
       // Update camera position in profile
-      me.root.camera.position.x = position.x;
-      me.root.camera.position.y = position.y;
-      me.root.camera.position.z = position.z;
+      console.log(session);
+      session.value = {
+         x: position.x,
+         y: position.y,
+         z: position.z
+      };
     }
   };
 
@@ -34,11 +38,11 @@ export default function CanvasComponent({
     <Canvas
       frameloop="always"
       camera={{
-        position: me?.root?.camera?.position
+        position: me?.root?.camera?.byMe?.value
           ? [
-              me.root.camera.position.x,
-              me.root.camera.position.y,
-              me.root.camera.position.z,
+            me?.root?.camera?.byMe?.value?.x,
+            me?.root?.camera?.byMe?.value?.y,
+            me?.root?.camera?.byMe?.value?.z,
             ]
           : [
               defaultCameraPosition.x,
@@ -58,7 +62,7 @@ export default function CanvasComponent({
       <directionalLight
         position={[5, 5, 5]}
         intensity={1.2}
-        castShadow // ✅ Enable shadow casting
+        castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-far={20}
@@ -67,9 +71,13 @@ export default function CanvasComponent({
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
       />
-      <Stars />
-      <Planet disableEditing={false} simulationID={simulationID} />
-      <CameraController onCameraChange={handleCameraChange} />
+      <Stars count={100} size={5} minDistance={3} />
+      <Planet />
+      
+      <CameraController onCameraChange={handleCameraChange} isFrozen={isFrozen} customCameraPosition={me?.root?.camera?.inCurrentSession?.value 
+        ? { x: me?.root?.camera?.inCurrentSession?.value.x, y: me?.root?.camera?.inCurrentSession?.value.y, z: me?.root?.camera?.inCurrentSession?.value.z }
+        : undefined} />
+      {/* */}
     </Canvas>
   );
 }

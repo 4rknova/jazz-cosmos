@@ -1,23 +1,52 @@
 import { OrbitControls } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 interface CameraControllerProps {
   onCameraChange: (
     position: { x: number; y: number; z: number },
-    isEndOfInteraction?: boolean,
+    isEndOfInteraction?: boolean
   ) => void;
+  isFrozen: boolean;
+  customCameraPosition?: { x: number; y: number; z: number };
 }
 
 /**
  * Camera controller component that can access the camera within the Canvas context
- * Tracks camera position changes and notifies parent components
+ * Tracks camera position changes and notifies parent components asynchronously
  */
-export function CameraController({ onCameraChange }: CameraControllerProps) {
+export function CameraController({ onCameraChange, isFrozen, customCameraPosition }: CameraControllerProps) {
   const { camera } = useThree();
   const controlsRef = useRef(null);
-  const [isControlPressed, setIsControlPressed] = useState(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
+
+
+  // Function to smoothly interpolate the camera position
+  const smoothTransition = (start: THREE.Vector3, end: THREE.Vector3, duration: number) => {
+    const startTime = performance.now();
+
+    const animate = () => {
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+      
+      camera.position.lerpVectors(start, end, progress);
+      
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        camera.position.copy(end);
+        animationFrameRef.current = null;
+      }
+    };
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(animate);
+  };
 
   // Helper function to get current camera position
   const getCurrentPosition = () => ({
@@ -26,46 +55,35 @@ export function CameraController({ onCameraChange }: CameraControllerProps) {
     z: camera.position.z,
   });
 
-  // Track previous position to detect changes
-  const prevPosition = useRef(camera.position.clone());
-
-  // Check camera position on each frame
-  useFrame(() => {
-    if (!camera.position.equals(prevPosition.current)) {
-      onCameraChange(getCurrentPosition());
-      prevPosition.current.copy(camera.position);
-    }
-  });
-
-  // Add keyboard event listeners for control key
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        console.log("Control key pressed");
-        setIsControlPressed(true);
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        console.log("Control key released");
-        setIsControlPressed(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    console.log("customCameraPosition", customCameraPosition);
+    if (isFrozen && customCameraPosition != undefined) {
+      intervalRef.current = setInterval(() => {
+        console.log("customCameraPosition", customCameraPosition);
+        const target = new THREE.Vector3(
+          customCameraPosition.x,
+          customCameraPosition.y,
+          customCameraPosition.z
+        );
+        smoothTransition(camera.position.clone(), target, 1000); // Transition over 1 second
+      }, 1000);
+    }
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [isFrozen,  JSON.stringify(customCameraPosition)]);
 
   return (
     <OrbitControls
       ref={controlsRef}
-      enableZoom={true}
+      enableZoom={!isFrozen}
+      enableRotate={!isFrozen}
+      enablePan={!isFrozen}
+      reverseOrbit={true}
+      minDistance={2.0}
+      maxDistance={5}
       onEnd={() => {
         // This fires when control interaction ends
         onCameraChange(getCurrentPosition(), true);

@@ -14,6 +14,9 @@ importers:
       '@react-three/fiber':
         specifier: ^9.1.0
         version: 9.1.0(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(three@0.174.0)
+      jazz-inspector:
+        specifier: ^0.11.3
+        version: 0.11.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       jazz-react:
         specifier: ^0.11.3
         version: 0.11.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -743,6 +746,9 @@ packages:
   cojson@0.11.3:
     resolution: {integrity: sha512-9C0RmRxcJaKBOFOwaz4cucUpwNZj0Be+OEViUjDQKnmmpvXhMJAez2I/ZwFkJhR761O5+1XVEYC5ivc5PSO98g==}
 
+  cojson@0.11.5:
+    resolution: {integrity: sha512-ko0l6X40GBglGylr7ztRhyzx/kcqCl5bUcgXTUBSlJF+lAcQpgPmZMutkL8snh5E/X3EmMABGF9bzGbs0ZkO6w==}
+
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
     engines: {node: '>=7.0.0'}
@@ -950,8 +956,19 @@ packages:
   jazz-crypto-rs@0.0.6:
     resolution: {integrity: sha512-+hJM9hPzMjK7Jk9++sUs5mKXlFiCTMDZ2wjO8WsfNpY7RZ+kiYSwkCrKvvvDRHSXPlzoyFQFxrSrXqN0/Fr6Yw==}
 
+  jazz-inspector@0.11.5:
+    resolution: {integrity: sha512-+42kiLRD2e09rGp1fFWDy/t3KERtnEOIcblEQifkivX+3ifJ4mKvWrtBTIJVMyfnxNkubSUeHca1tagTN/KvdQ==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+
   jazz-react-core@0.11.3:
     resolution: {integrity: sha512-VQT0NoplE5uhOHrOhD48d2mLJUY5qE3gqgavJ14/eqeXwpmKtkYsfTvg/XnLoGM/x9MHeT9dp4i7ub3wttKA9A==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  jazz-react-core@0.11.5:
+    resolution: {integrity: sha512-UJFk6G1VZRZI+9s6j7a40EHi/Iv5MZlbcxcaxa2/3VenDvtlFQx/vrB2TtqZ6Hi1bDXML7Ysc+2F4PZN9DrGWA==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -964,6 +981,9 @@ packages:
 
   jazz-tools@0.11.3:
     resolution: {integrity: sha512-bllso+KqqAxYUNJ3NFOnPEGrVs8WaIsjRj8O8HIc0kmekBL6tQxvt1XDS+vxq+li8cPH5hB6r1WcmjTV8tW2mA==}
+
+  jazz-tools@0.11.5:
+    resolution: {integrity: sha512-WdzUB3wg+T5X110uTPmIqRI90Kd12ex0iN5wcTsTuKqd0Yv2ZxzGp9zj9R+8feJojBP/+FwSCVdd+TBtjr3cOQ==}
 
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
@@ -2064,6 +2084,17 @@ snapshots:
       neverthrow: 7.2.0
       queueueue: 4.1.2
 
+  cojson@0.11.5:
+    dependencies:
+      '@noble/ciphers': 0.1.4
+      '@noble/curves': 1.8.1
+      '@noble/hashes': 1.7.1
+      '@opentelemetry/api': 1.9.0
+      '@scure/base': 1.2.1
+      jazz-crypto-rs: 0.0.6
+      neverthrow: 7.2.0
+      queueueue: 4.1.2
+
   color-convert@2.0.1:
     dependencies:
       color-name: 1.1.4
@@ -2264,10 +2295,26 @@ snapshots:
 
   jazz-crypto-rs@0.0.6: {}
 
+  jazz-inspector@0.11.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      cojson: 0.11.5
+      jazz-react-core: 0.11.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      jazz-tools: 0.11.5
+      react: 19.0.0
+    transitivePeerDependencies:
+      - react-dom
+
   jazz-react-core@0.11.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       cojson: 0.11.3
       jazz-tools: 0.11.3
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
+  jazz-react-core@0.11.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      cojson: 0.11.5
+      jazz-tools: 0.11.5
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
@@ -2285,6 +2332,12 @@ snapshots:
     dependencies:
       '@scure/bip39': 1.5.4
       cojson: 0.11.3
+      fast-myers-diff: 3.2.0
+
+  jazz-tools@0.11.5:
+    dependencies:
+      '@scure/bip39': 1.5.4
+      cojson: 0.11.5
       fast-myers-diff: 3.2.0
 
   jiti@1.21.7: {}

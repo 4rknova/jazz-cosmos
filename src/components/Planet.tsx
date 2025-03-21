@@ -1,11 +1,8 @@
 import { useFBO } from "@react-three/drei";
 import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useAccount, useCoState } from "jazz-react";
-import { ID } from "jazz-tools";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Cursor, Simulation, Vec3 } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
@@ -14,32 +11,18 @@ import pointerFragmentShader from "../shaders/pointerFragment.glsl";
 import pointerVertexShader from "../shaders/pointerVertex.glsl";
 
 interface PlanetProps {
-  disableEditing: boolean;
-  simulationID: ID<Simulation>;
+  
 }
 
-const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
-  const { me } = useAccount();
-
-  // Only use the simulation if we have a valid ID
-  const simulation = simulationID
-    ? useCoState(Simulation, simulationID, {
-        cursorFeed: [],
-        editFeed: [],
-      })
-    : null;
-
+const Planet: React.FC<PlanetProps> = ({ }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const heightmapPreviewRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
   const shadowMapSize = 2048;
   const shadowMap = useFBO(shadowMapSize, shadowMapSize, {
-    depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize),
+    depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize, THREE.UnsignedShortType),
     depthBuffer: true,
   });
-
-  shadowMap.depthTexture.format = THREE.DepthFormat;
-  shadowMap.depthTexture.type = THREE.UnsignedShortType;
 
   const heightmapA = useFBO(heightMapSize, heightMapSize, {
     generateMipmaps: true, // Enables mipmaps
@@ -70,7 +53,7 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
   const [hoverUV, setHoverUV] = useState<THREE.Vector2>(
     new THREE.Vector2(0, 0),
   );
-  const [playerColor, setPlayerColor] = useState<THREE.Color>(
+  const [playerColor, ] = useState<THREE.Color>(
     new THREE.Color(Math.random(), Math.random(), Math.random()),
   );
 
@@ -102,7 +85,7 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
     }
   }, [scene]);
 
-  const mousePointer = useRef(new THREE.Vector2());
+  const [mousePointer, ] = useState(new THREE.Vector2());
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const universalMaterialUniforms = useRef({
@@ -168,8 +151,8 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
-
-  const [cursors, setCursors] = useState<Cursor[]>([]);
+/*
+  const [cursors, ] = useState<Cursor[]>([]);
 
   useEffect(() => {
     if (simulation?.cursorFeed) {
@@ -180,7 +163,8 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
       );
     }
   }, [simulation?.cursorFeed]);
-
+*/
+/*
   const pushCursor = (position: THREE.Vector3) => {
     if (!me.sessionID || !simulation || !simulation.cursorFeed) return;
 
@@ -196,15 +180,13 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
       ),
     );
   };
-
+*/
   useFrame(() => {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    mousePointer.current.x =
-      (mousePosition.current.x / window.innerWidth) * 2 - 1;
-    mousePointer.current.y =
-      -(mousePosition.current.y / window.innerHeight) * 2 + 1;
+    mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    mousePointer.y =-(mousePosition.current.y / window.innerHeight) * 2 + 1;
 
-    raycaster.current.setFromCamera(mousePointer.current, camera);
+    raycaster.current.setFromCamera(mousePointer, camera);
     const intersects = raycaster.current.intersectObject(meshRef.current);
 
     if (intersects.length > 0) {
@@ -221,14 +203,11 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
         setHoverNormal(normal.clone());
         setHoverPosition(newPosition);
       }
-    } else {
-      setHoverPosition(null);
-      setHoverNormal(null);
     }
 
     // Position and orient the indicator if hovering
     if (hoverPosition && hoverNormal && indicatorRef.current) {
-      pushCursor(hoverPosition); // TODO: Offload this
+      //pushCursor(hoverPosition); // TODO: Offload this
 
       indicatorRef.current.position.copy(hoverPosition);
       const lookAtTarget = hoverPosition.clone().add(hoverNormal);
@@ -371,7 +350,7 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
         />
       </mesh>
 
-      {cursors.map((cursor, i) => {
+      {/* {cursors.map((cursor, i) => {
         // if (cursor._owner?.id !== me?.id) return;
         if (
           !cursor.position ||
@@ -389,7 +368,7 @@ const Planet: React.FC<PlanetProps> = ({ simulationID }) => {
             <meshBasicMaterial color={0x00ff00} />
           </mesh>
         );
-      })}
+      })} */}
     </group>
   );
 };
