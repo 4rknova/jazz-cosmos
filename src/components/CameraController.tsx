@@ -8,7 +8,7 @@ interface CameraControllerProps {
     position: { x: number; y: number; z: number },
     isEndOfInteraction?: boolean
   ) => void;
-  isFrozen: boolean;
+  isCameraControlFrozen: boolean;
   customCameraPosition?: { x: number; y: number; z: number };
 }
 
@@ -16,7 +16,7 @@ interface CameraControllerProps {
  * Camera controller component that can access the camera within the Canvas context
  * Tracks camera position changes and notifies parent components asynchronously
  */
-export function CameraController({ onCameraChange, isFrozen, customCameraPosition }: CameraControllerProps) {
+export function CameraController({ onCameraChange, isCameraControlFrozen: isCameraControlFrozen, customCameraPosition }: CameraControllerProps) {
   const { camera } = useThree();
   const controlsRef = useRef(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -57,36 +57,36 @@ export function CameraController({ onCameraChange, isFrozen, customCameraPositio
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    console.log("customCameraPosition", customCameraPosition);
-    if (isFrozen && customCameraPosition != undefined) {
+    
+    if (isCameraControlFrozen && customCameraPosition != undefined) {
       intervalRef.current = setInterval(() => {
-        console.log("customCameraPosition", customCameraPosition);
         const target = new THREE.Vector3(
           customCameraPosition.x,
           customCameraPosition.y,
           customCameraPosition.z
         );
-        smoothTransition(camera.position.clone(), target, 1000); // Transition over 1 second
-      }, 1000);
+        smoothTransition(camera.position.clone(), target, 500); // Transition over 1 second
+      }, 500);
     }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isFrozen,  JSON.stringify(customCameraPosition)]);
+  }, [isCameraControlFrozen,  JSON.stringify(customCameraPosition)]);
 
   return (
     <OrbitControls
       ref={controlsRef}
-      enableZoom={!isFrozen}
-      enableRotate={!isFrozen}
-      enablePan={!isFrozen}
+      enableZoom={!isCameraControlFrozen}
+      enableRotate={!isCameraControlFrozen}
+      enablePan={!isCameraControlFrozen}
       reverseOrbit={true}
       minDistance={2.0}
       maxDistance={5}
       onEnd={() => {
-        // This fires when control interaction ends
-        onCameraChange(getCurrentPosition(), true);
+        !isCameraControlFrozen && (() => {
+          onCameraChange(getCurrentPosition(), true);
+        })();
       }}
       mouseButtons={{
         LEFT: undefined,

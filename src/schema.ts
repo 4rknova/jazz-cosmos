@@ -4,6 +4,12 @@ export class Vec3 {
   x = co.number;
   y = co.number;
   z = co.number;
+
+  constructor(data: { x: number; y: number; z: number }) {
+    this.x = data.x;
+    this.y = data.y;
+    this.z = data.z;
+  }
 }
 
 export class Vec2 {

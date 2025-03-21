@@ -4,14 +4,15 @@ import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
+import { Vec3 } from "../schema";
 
-export default function PlayAreaComponent({
-  isFrozen,
-}: { isFrozen: boolean }) {
+export default function World({
+  isCameraControlFrozen: isCameraControlFrozen,
+}: { isCameraControlFrozen: boolean }) {
   const { me } = useAccount({ profile: {}, root: {} });
 
   // Default camera position to use if none is saved
-  const defaultCameraPosition = { x: 5, y: 2, z: 5 };
+  const defaultCameraPosition = new Vec3({ x: 5, y: 2, z: 5 });
 
   // Function to handle camera position changes
   const handleCameraChange = (position: {
@@ -21,16 +22,12 @@ export default function PlayAreaComponent({
   }) => {
     if (!me) return;
     
-    console.log("session",  me?.root?.camera?.byMe);
-    const session = me?.root?.camera?.inCurrentSession
+    let session = me?.root?.camera
     if (session) {
       // Update camera position in profile
-      console.log(session);
-      session.value = {
-         x: position.x,
-         y: position.y,
-         z: position.z
-      };
+      session.push(new Vec3({x: position.x, y: position.y, z: position.z}));
+      console.log("Submit new camera position", session);
+
     }
   };
 
@@ -74,9 +71,11 @@ export default function PlayAreaComponent({
       <Stars count={100} size={5} minDistance={3} />
       <Planet />
       
-      <CameraController onCameraChange={handleCameraChange} isFrozen={isFrozen} customCameraPosition={me?.root?.camera?.inCurrentSession?.value 
-        ? { x: me?.root?.camera?.inCurrentSession?.value.x, y: me?.root?.camera?.inCurrentSession?.value.y, z: me?.root?.camera?.inCurrentSession?.value.z }
-        : undefined} />
+      <CameraController
+        onCameraChange={handleCameraChange}
+        isCameraControlFrozen={isCameraControlFrozen}
+        customCameraPosition={me?.root?.camera?.byMe?.value}
+      />
       {/* */}
     </Canvas>
   );

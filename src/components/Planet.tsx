@@ -185,9 +185,8 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
     mousePointer.y =-(mousePosition.current.y / window.innerHeight) * 2 + 1;
-
     raycaster.current.setFromCamera(mousePointer, camera);
-    const intersects = raycaster.current.intersectObject(meshRef.current);
+    const intersects = raycaster.current.intersectObject(meshRef.current!);
 
     if (intersects.length > 0) {
       const { point, normal, uv } = intersects[0];
