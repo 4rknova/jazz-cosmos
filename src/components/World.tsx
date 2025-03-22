@@ -5,6 +5,7 @@ import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
 import { Vec3 } from "../schema";
+import BirdFlocks from "./BirdFlocks";
 
 export default function World({
   isCameraControlFrozen: isCameraControlFrozen,
@@ -69,6 +70,7 @@ export default function World({
         shadow-camera-bottom={-10}
       />
       <Stars count={100} size={5} minDistance={3} />
+      <BirdFlocks />
       <Planet />
       
       <CameraController
