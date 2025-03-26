@@ -1,38 +1,47 @@
-import { Account, CoFeed, CoMap, co } from "jazz-tools";
+import { Account, Profile, Group, CoFeed, CoMap, co } from "jazz-tools";
+import type { Cursor, Camera } from "./types";
 
-export class Vec3 {
-  x = co.number;
-  y = co.number;
-  z = co.number;
+export class CursorFeed extends CoFeed.Of(co.json<Cursor>()) {}
+export class CameraFeed extends CoFeed.Of(co.json<Camera>()) {}
 
-  constructor(data: { x: number; y: number; z: number }) {
-    this.x = data.x;
-    this.y = data.y;
-    this.z = data.z;
-  }
+export class CursorContainer extends CoMap {
+  cursorFeed = co.ref(CursorFeed);
 }
 
-export class Vec2 {
-  x = co.number;
-  y = co.number;
+export class CosmosRoot extends CoMap {
+  cursors = co.ref(CursorFeed);
+  camera = co.ref(CameraFeed);
 }
 
-export class Camera extends CoFeed.Of(co.json<Vec3>()) {}
-
-// --- Account ---
-
-export class AccountRoot extends CoMap {
-  camera = co.ref(Camera);
+export class CosmosProfile extends Profile {
+  name = co.string;
 }
 
 export class CosmosAccount extends Account {
-  root = co.ref(AccountRoot);
+  profile = co.ref(CosmosProfile);
+  root = co.ref(CosmosRoot);
 
+  /* The account migration is run on account creation and on every log-in.
+   ** You can use it to set up the account root and any other initial
+   ** CoValues you need.
+   */
   async migrate(this: CosmosAccount) {
     if (this.root === undefined) {
-      this.root = AccountRoot.create({
-        camera: Camera.create([]),
+      this.root = CosmosRoot.create({
+        cursors: CursorFeed.create([]),
+        camera: CameraFeed.create([]),
       });
+    }
+
+    if (this.profile === undefined) {
+      const group = Group.create();
+      group.addMember("everyone", "reader");
+      this.profile = CosmosProfile.create(
+        {
+          name: "Anonymous user",
+        },
+        group,
+      );
     }
   }
 }

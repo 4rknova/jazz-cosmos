@@ -7,17 +7,14 @@ import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
-import pointerFragmentShader from "../shaders/pointerFragment.glsl";
-import pointerVertexShader from "../shaders/pointerVertex.glsl";
+import Cursor from "./Cursor";
 
-interface PlanetProps {
-  
+interface PlanetProps {  
 }
 
 const Planet: React.FC<PlanetProps> = ({ }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const heightmapPreviewRef = useRef<THREE.Mesh>(null);
-  const heightMapSize = 1024; // Heightmap texture resolution
+  const heightMapSize = 2048; // Heightmap texture resolution
   const shadowMapSize = 2048;
   const shadowMap = useFBO(shadowMapSize, shadowMapSize, {
     depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize, THREE.UnsignedShortType),
@@ -25,6 +22,8 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
   });
 
   const heightmapA = useFBO(heightMapSize, heightMapSize, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
     generateMipmaps: true, // Enables mipmaps
     minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
     magFilter: THREE.LinearFilter, // Default for upscaling
@@ -32,6 +31,8 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     wrapT: THREE.RepeatWrapping,
   });
   const heightmapB = useFBO(heightMapSize, heightMapSize, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
     generateMipmaps: true, // Enables mipmaps
     minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
     magFilter: THREE.LinearFilter, // Default for upscaling
@@ -43,13 +44,14 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
   const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
 
-  const indicatorRef = useRef<THREE.Mesh>(null);
+  
   const [hoverPosition, setHoverPosition] = useState<THREE.Vector3>(
     new THREE.Vector3(0, 0, 0),
   );
   const [hoverNormal, setHoverNormal] = useState<THREE.Vector3>(
     new THREE.Vector3(0, 0, 0),
   );
+
   const [hoverUV, setHoverUV] = useState<THREE.Vector2>(
     new THREE.Vector2(0, 0),
   );
@@ -59,7 +61,7 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
 
   const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<
-    { uv: THREE.Vector2; strength: number }[]
+    { uv: THREE.Vector2; position: THREE.Vector3; strength: number }[]
   >([]);
 
   // Shadow camera setup
@@ -99,6 +101,7 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     uLightMatrix: { value: new THREE.Matrix4() },
     uPlayerColor: { value: playerColor },
     uHoverUV: { value: hoverUV },
+    uHoverPosition: { value: hoverPosition },
   }).current;
 
   const brushMaterial = new THREE.ShaderMaterial({
@@ -107,6 +110,7 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
       uUV: { value: new THREE.Vector2(0, 0) },
       uBrushSize: { value: 0.01 },
       uBrushStrength: { value: 1.0 },
+      uBrushPosition: { value: new THREE.Vector3(0, 0, 0) },
     },
     vertexShader: brushVertexShader,
     fragmentShader: brushFragmentShader,
@@ -151,36 +155,7 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
-/*
-  const [cursors, ] = useState<Cursor[]>([]);
 
-  useEffect(() => {
-    if (simulation?.cursorFeed) {
-      setCursors(
-        Object.values(simulation.cursorFeed.perSession)
-          .map((cursor) => cursor.value)
-          .filter((cursor) => cursor !== null),
-      );
-    }
-  }, [simulation?.cursorFeed]);
-*/
-/*
-  const pushCursor = (position: THREE.Vector3) => {
-    if (!me.sessionID || !simulation || !simulation.cursorFeed) return;
-
-    simulation.cursorFeed.push(
-      Cursor.create(
-        {
-          position: Vec3.create(
-            { x: position.x, y: position.y, z: position.z },
-            { owner: simulation._owner },
-          ),
-        },
-        { owner: simulation._owner },
-      ),
-    );
-  };
-*/
   useFrame(() => {
     // Convert screen coordinates to normalized device coordinates (-1 to +1)
     mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
@@ -195,6 +170,10 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
         setHoverUV(uv);
       }
 
+      if (point) {
+        setHoverPosition(point);
+      }
+
       if (normal) {
         const newPosition = point
           .clone()
@@ -203,14 +182,9 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
         setHoverPosition(newPosition);
       }
     }
-
-    // Position and orient the indicator if hovering
-    if (hoverPosition && hoverNormal && indicatorRef.current) {
-      //pushCursor(hoverPosition); // TODO: Offload this
-
-      indicatorRef.current.position.copy(hoverPosition);
-      const lookAtTarget = hoverPosition.clone().add(hoverNormal);
-      indicatorRef.current.lookAt(lookAtTarget);
+    else {
+      setHoverPosition(new THREE.Vector3(0, 0, 0));
+      setHoverNormal(new THREE.Vector3(0, 0, 0));
     }
 
     if (lightRef.current) {
@@ -245,11 +219,11 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
       const nextHeightmap =
         activeHeightmap === heightmapA ? heightmapB : heightmapA;
       // Render each point to the heightmap
-      for (const { uv, strength } of pendingPoints) {
+      for (const { uv, position, strength } of pendingPoints) {
         brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
         brushMaterial.uniforms.uUV.value = uv;
         brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
-
+        brushMaterial.uniforms.uBrushPosition.value = position;
         gl.setRenderTarget(nextHeightmap);
         gl.clear();
         gl.render(quadScene, quadCamera);
@@ -296,15 +270,94 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     const intersects = raycaster.current.intersectObject(meshRef.current);
 
     if (intersects.length > 0) {
-      const { uv } = intersects[0];
+      const { uv, point } = intersects[0];
       if (uv) {
         const strength = isShiftKeyPressed.current ? -1 : 1;
 
         // Append new point to the list
-        setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
+        setPendingPoints((prevPoints) => [...prevPoints, { uv, position: point, strength }]);
       }
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl + H
+      if (e.ctrlKey && e.key.toLowerCase() === "h") {
+        e.preventDefault(); // optional: prevent browser default behavior
+        openHeightmapInNewTab(gl, heightmapA);
+        openHeightmapInNewTab(gl, heightmapB);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [gl, activeHeightmap]);
+
+
+  function openHeightmapInNewTab(renderer: THREE.WebGLRenderer, heightmap: THREE.WebGLRenderTarget) {
+    const size = heightmap.width;
+    const pixelBuffer = new Float32Array(size * size * 4); // RGBA float data
+  
+    // Make sure float read support is enabled
+    if (!renderer.capabilities.isWebGL2 && !renderer.extensions.get("OES_texture_float")) {
+      alert("Float textures not supported on this device.");
+      return;
+    }
+  
+    renderer.setRenderTarget(heightmap);
+    renderer.readRenderTargetPixels(heightmap, 0, 0, size, size, pixelBuffer);
+    renderer.setRenderTarget(null);
+  
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.createImageData(size, size);
+  
+    // Find min/max to normalize values between 0 and 255 for display
+    let min = Infinity;
+    let max = -Infinity;
+    for (let i = 0; i < pixelBuffer.length; i += 4) {
+      const value = pixelBuffer[i]; // Use R channel
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+  
+    const range = max - min || 1; // Avoid division by zero
+  
+    for (let i = 0; i < pixelBuffer.length; i += 4) {
+      const floatVal = pixelBuffer[i]; // Use only the red channel
+      const normalized = ((floatVal - min) / range) * 255;
+      const byteVal = Math.max(0, Math.min(255, normalized));
+  
+      imageData.data[i] = byteVal;     // R
+      imageData.data[i + 1] = byteVal; // G
+      imageData.data[i + 2] = byteVal; // B
+      imageData.data[i + 3] = 255;     // A
+    }
+  
+    ctx.putImageData(imageData, 0, 0);
+    const dataURL = canvas.toDataURL();
+  
+    // Open in new tab
+    const newTab = window.open();
+    if (newTab) {
+      newTab.document.write(`
+        <html>
+          <head><title>Float Heightmap Preview</title></head>
+          <body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
+            <img src="${dataURL}" style="max-width:100%; max-height:100%;" />
+          </body>
+        </html>
+      `);
+      newTab.document.close();
+    } else {
+      alert("Popup blocked. Please allow popups to view the heightmap.");
+    }
+  }
+  
+  
 
   return (
     <group>
@@ -321,53 +374,8 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
           fragmentShader={planetFragmentShader}
           vertexShader={planetVertexShader}
         />
-      </mesh>
-      <mesh
-        ref={heightmapPreviewRef}
-        position={[-2.5, -1.5, 0]}
-        scale={[1, 1, 1]}
-      >
-        {/* <>
-        <planeGeometry args={[2, 1]} />
-        <shaderMaterial
-          uniforms={universalMaterialUniforms}
-          fragmentShader={vizFragmentShader}
-          vertexShader={vizVertexShader}
-        /> 
-        </> */}
-      </mesh>
-
-      <mesh ref={indicatorRef}>
-        <planeGeometry args={[0.1, 0.1]} />
-        <shaderMaterial
-          uniforms={universalMaterialUniforms}
-          fragmentShader={pointerFragmentShader}
-          vertexShader={pointerVertexShader}
-          transparent={true}
-          depthWrite={false}
-          blending={THREE.NormalBlending}
-        />
-      </mesh>
-
-      {/* {cursors.map((cursor, i) => {
-        // if (cursor._owner?.id !== me?.id) return;
-        if (
-          !cursor.position ||
-          !cursor.position.x ||
-          !cursor.position.y ||
-          !cursor.position.z
-        )
-          return;
-        return (
-          <mesh
-            key={i}
-            position={[cursor.position.x, cursor.position.y, cursor.position.z]}
-          >
-            <planeGeometry args={[0.1, 0.1]} />
-            <meshBasicMaterial color={0x00ff00} />
-          </mesh>
-        );
-      })} */}
+      </mesh>\
+      <Cursor position={hoverPosition} normal={hoverNormal} color={playerColor} />
     </group>
   );
 };

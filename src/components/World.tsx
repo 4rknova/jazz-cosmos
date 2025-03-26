@@ -1,19 +1,20 @@
+import { useState } from "react";
 import { useAccount } from "jazz-react";
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
-import { Vec3 } from "../schema";
-import BirdFlocks from "./BirdFlocks";
-
-export default function World({
+import { CursorFeed } from "../schema";export default function World({
   isCameraControlFrozen: isCameraControlFrozen,
 }: { isCameraControlFrozen: boolean }) {
-  const { me } = useAccount({ profile: {}, root: {} });
+
+  const { me } = useAccount();
+  const [cursorFeed, setCursorFeed] = useState<CursorFeed | null>(null);
+  const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
 
   // Default camera position to use if none is saved
-  const defaultCameraPosition = new Vec3({ x: 5, y: 2, z: 5 });
+  const defaultCameraPosition = {x: 5, y: 0, z: -5};
 
   // Function to handle camera position changes
   const handleCameraChange = (position: {
@@ -26,7 +27,7 @@ export default function World({
     let session = me?.root?.camera
     if (session) {
       // Update camera position in profile
-      session.push(new Vec3({x: position.x, y: position.y, z: position.z}));
+      session.push({position: {x: position.x, y: position.y, z: position.z}});
       console.log("Submit new camera position", session);
 
     }
@@ -38,9 +39,9 @@ export default function World({
       camera={{
         position: me?.root?.camera?.byMe?.value
           ? [
-            me?.root?.camera?.byMe?.value?.x,
-            me?.root?.camera?.byMe?.value?.y,
-            me?.root?.camera?.byMe?.value?.z,
+            me?.root?.camera?.byMe?.value?.position.x,
+            me?.root?.camera?.byMe?.value?.position.y,
+            me?.root?.camera?.byMe?.value?.position.z,
             ]
           : [
               defaultCameraPosition.x,
@@ -70,13 +71,12 @@ export default function World({
         shadow-camera-bottom={-10}
       />
       <Stars count={100} size={5} minDistance={3} />
-      <BirdFlocks />
       <Planet />
       
       <CameraController
         onCameraChange={handleCameraChange}
         isCameraControlFrozen={isCameraControlFrozen}
-        customCameraPosition={me?.root?.camera?.byMe?.value}
+        customCameraPosition={me?.root?.camera?.byMe?.value?.position}
       />
       {/* */}
     </Canvas>

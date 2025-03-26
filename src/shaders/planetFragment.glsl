@@ -18,8 +18,9 @@ const float LAND_THRESHOLD = 0.02;     // Rocky land
 const float MOUNTAIN_THRESHOLD = 0.08; // Snowy mountains
 
 // Terrain Colors
-const vec3 WATER_COLOR_DEEP = vec3(0.0, 0.4, 0.8);   // Deep Blue
-const vec3 WATER_COLOR_SHALLOW = vec3(0.2, 0.6, 1.0);   // Deep Blue
+const vec3 WATER_COLOR_DEEP = vec3(0.2, 0.7, 0.9); 
+const vec3 FOAM_COLOR = vec3(0.4, 0.8, 1.0);
+const vec3 WATER_COLOR_SHALLOW = vec3(0.15, 0.65, 1.0);
 const vec3 SAND_COLOR = vec3(0.9, 0.8, 0.6);     // Light Yellowish Sand
 const vec3 VALLEY_COLOR = vec3(0.2, 0.8, 0.2);   // Lush Green
 const vec3 LAND_COLOR = vec3(0.5, 0.4, 0.2);     // Brownish Rocky Land
@@ -102,38 +103,51 @@ float fbm(in vec3 p)
     return f;
 }
 
-// Generate wave pattern
-float wavePattern(vec2 uv, float time) {
-    float waves = 0.0;
-    float frequency = 2.0;
-    float amplitude = 0.1;
-    
-    for (int i = 0; i < 4; i++) {
-        waves += sin(uv.y * frequency + noise(uv.yx + time) * 2.0) * amplitude;
-        frequency *= 1.8;
-        amplitude *= 0.5;
-    }
+vec3 generateWaterTexture(vec2 uv, float disp, float time, float shoreline)
+{
+    // Animate wave UVs
+    vec2 waveUV = uv * 10.0;
+    waveUV.x += time * 0.01;
+    waveUV.y += sin(uv.x * 20.0 + time) * 0.05;
 
-    return waves;
+    shoreline = texture2D(uHeightmap, vUv-waveUV*0.001).r * 10.00;
+    shoreline += texture2D(uHeightmap, vUv+waveUV*0.001).r * 10.00;
+    shoreline *= 0.5;
+    
+    // Richer wave detail
+    float wave1 = fbm(vec3(waveUV * 1.0, 0.1));
+    float wave2 = fbm(vec3(waveUV * 2.3 + vec2(5.0), 0.17));
+    float wave3 = fbm(vec3(waveUV * 4.7 + vec2(11.0), 0.05));
+    float wavePattern = (wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2);
+
+    float depthFactor = smoothstep(0.0, 0.6, disp);
+    vec3 waterColor = mix(WATER_COLOR_DEEP, WATER_COLOR_SHALLOW, depthFactor);
+
+    // ----------- Improved Foam Logic ----------- //
+
+    // Target foam zone
+    float foamCenter = 0.6; // Where foam is strongest
+    float foamWidth = 0.04;  // Spread of foam band
+
+    // Use signed distance from foamCenter to create a bell-curve style falloff
+    float foamFalloff = 1.0 - smoothstep(0.0, foamWidth, abs(disp + wavePattern * 0.25 - foamCenter));
+
+    // Add chaotic modulation (gentle)
+    float foamNoise = fbm(vec3(uv * 15.0, 0.2));
+    float foamMask = clamp(foamFalloff + (foamNoise - 0.5) * 0.4, 0.0, shoreline * 14.0);
+
+
+    // Fresnel reflection
+    float fresnel = pow(1.0 - dot(normalize(vec3(uv, 1.0)), vec3(0.0, 0.0, 1.0)), 2.0);
+    vec3 reflection = mix(vec3(0.1, 0.15, 0.2), vec3(0.6, 0.7, 0.8), fresnel);
+
+    // Final blend
+    vec3 finalColor = mix(waterColor, FOAM_COLOR, foamMask);
+    finalColor = mix(finalColor, reflection, 0.1 + 0.2 * fresnel);
+
+    return finalColor;
 }
 
-// Procedural sea texture function
-vec3 seaTexture(vec2 uv, float time) {
-    float waves = wavePattern(uv, time);
-    
-    // Base color variations
-    vec3 deepSea = WATER_COLOR_DEEP;
-    vec3 shallowSea = WATER_COLOR_SHALLOW;
-    
-    // Blend between deep and shallow water based on waves
-    vec3 seaColor = mix(deepSea, shallowSea, 0.2 + 0.8 * waves);
-    
-    // Add some highlights for reflections
-    float highlight = smoothstep(0.3, 0.5, waves);
-    seaColor += highlight * vec3(0.2, 0.4, 0.6);
-    
-    return seaColor;
-}
 
 // Improved procedural vegetation texture
 vec3 generateVegetationTexture(vec2 uv, float disp)
@@ -196,11 +210,11 @@ vec3 terrainColor(float disp, vec2 uv) {
     vec3 color;
 
     if (disp < WATER_THRESHOLD) {
-        return seaTexture(uv * 5.0 * fbm(vec3(uv * 500.0, uTime * 0.5)), uTime * 0.1);
+        return generateWaterTexture(uv, fbm(vec3(uv * 500.0, uTime * 0.15)), uTime * 0.25, 1.0 - disp);
     }
     
     if (disp >= WATER_THRESHOLD && disp < SAND_THRESHOLD) {
-        color = mix(WATER_COLOR_SHALLOW, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
+        color = mix(WATER_COLOR_SHALLOW * 0.9, SAND_COLOR, smoothstep(WATER_THRESHOLD, SAND_THRESHOLD, disp));
     }
     else if (disp >= SAND_THRESHOLD && disp < VALLEY_THRESHOLD + 0.01 * fbm(vec3(uv * 400.0, 1.0))) {
         color = mix(SAND_COLOR, VALLEY_COLOR, smoothstep(SAND_THRESHOLD, VALLEY_THRESHOLD, disp));
