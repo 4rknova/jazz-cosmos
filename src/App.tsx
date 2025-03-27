@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import World from "./components/World.tsx";
 import { Logo } from "./components/Logo.tsx";
+import { CursorFeed } from "./schema.ts";
+import { ID } from "jazz-tools";
 
 function App() {
   const [isCameraControlFrozen, setIsCameraControlFrozen] = useState(false);
@@ -68,7 +70,7 @@ function App() {
       {/* Main App */}
       {splashStage >= 4 &&  (
         <main className="w-full h-dvh bg-black">
-        <World worldId={worldId} isCameraControlFrozen={isCameraControlFrozen} />
+        <World worldId={worldId as ID<CursorFeed>} isCameraControlFrozen={isCameraControlFrozen} />
 
           <div className="absolute top-5 left-5 bg-gray-900/50 backdrop-blur-sm p-14 space-x-5 rounded-lg shadow-lg">
           <button

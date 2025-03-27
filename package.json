@@ -13,33 +13,31 @@
     "format-and-lint:fix": "biome check . --write"
   },
   "dependencies": {
-    "@react-three/drei": "^10.0.5",
+    "@react-three/drei": "^10.0.4",
     "@react-three/fiber": "^9.1.0",
-    "jazz-inspector": "https://pkg.pr.new/garden-co/jazz/jazz-inspector@156fba66e36ee57eab9d08ae7f44ac55a178df77",
-    "jazz-react": "https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77",
-    "jazz-tools": "https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77",
-    "qrcode": "^1.5.4",
+    "jazz-inspector": "^0.11.3",
+    "jazz-react": "^0.11.3",
+    "jazz-tools": "^0.11.3",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-qr-code": "^2.0.15",
     "three": "^0.174.0",
     "vite-plugin-glsl": "^1.3.3"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@playwright/test": "^1.51.1",
-    "@types/react": "^18.3.20",
-    "@types/react-dom": "^18.3.5",
+    "@playwright/test": "^1.50.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@types/three": "^0.174.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.21",
-    "globals": "^15.15.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "globals": "^15.11.0",
     "is-ci": "^3.0.1",
-    "postcss": "^8.5.3",
+    "postcss": "^8.4.27",
     "tailwindcss": "^3.4.17",
-    "typescript": "~4.9.5",
-    "vite": "^6.2.3"
+    "typescript": "~5.6.2",
+    "vite": "^6.0.11"
   },
   "packageManager": "pnpm@10.5.0+sha512.11106a5916c7406fe4b8cb8e3067974b8728f47308a4f5ac5e850304afa6f57e2847d7950dfe78877d8d36bfb401d381c4215db3a4c3547ffa63c14333a6fa51"
 }

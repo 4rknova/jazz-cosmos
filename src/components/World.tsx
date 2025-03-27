@@ -4,10 +4,14 @@ import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
+import { ID } from "jazz-tools";
+import { CursorFeed } from "../schema";
+
+const skybox = "/public/resources/galactic_plane_hazy_nebulae_1.jpg";
 
 type WorldProps = {
   isCameraControlFrozen: boolean;
-  worldId?: string | null;
+  worldId?: ID<CursorFeed> | null;
 };
 
 export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
@@ -31,6 +35,9 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
   };
  
   console.log(worldId);
+
+  const cursorFeedID = worldId ?? me?.profile?.cursor?.id;
+
   return (
     <Canvas
       frameloop="always"
@@ -50,7 +57,7 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
     >
       <Environment
         background={true}
-        files="../../resources/galactic_plane_hazy_nebulae_1.jpg"
+        files={skybox}
       />
 
       <ambientLight intensity={0.5} />
@@ -70,8 +77,8 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
       />
 
       <Stars count={100} size={5} minDistance={3} />
-      {(worldId || me?.profile?.cursor?.id) && (
-        <Planet cursorFeedID={worldId ?? me?.profile?.cursor?.id} />
+      {cursorFeedID && (
+         <Planet cursorFeedID={cursorFeedID} />
       )}
       
       <CameraController
