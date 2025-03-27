@@ -1,20 +1,18 @@
 import { Account, Profile, Group, CoFeed, CoMap, co } from "jazz-tools";
-import type { Cursor, Camera } from "./types";
+import type { Cursor, Camera, Edit } from "./types";
 
 export class CursorFeed extends CoFeed.Of(co.json<Cursor>()) {}
+export class EditorFeed extends CoFeed.Of(co.json<Edit>()) {}
 export class CameraFeed extends CoFeed.Of(co.json<Camera>()) {}
 
-export class CursorContainer extends CoMap {
-  cursorFeed = co.ref(CursorFeed);
-}
-
 export class CosmosRoot extends CoMap {
-  cursors = co.ref(CursorFeed);
   camera = co.ref(CameraFeed);
 }
 
 export class CosmosProfile extends Profile {
   name = co.string;
+  cursor = co.ref(CursorFeed);
+  editor = co.ref(EditorFeed);
 }
 
 export class CosmosAccount extends Account {
@@ -28,17 +26,18 @@ export class CosmosAccount extends Account {
   async migrate(this: CosmosAccount) {
     if (this.root === undefined) {
       this.root = CosmosRoot.create({
-        cursors: CursorFeed.create([]),
         camera: CameraFeed.create([]),
       });
     }
 
     if (this.profile === undefined) {
       const group = Group.create();
-      group.addMember("everyone", "reader");
+      group.addMember("everyone", "writer");
       this.profile = CosmosProfile.create(
         {
           name: "Anonymous user",
+          cursor: CursorFeed.create([], { owner: group }),
+          editor: EditorFeed.create([], { owner: group }),
         },
         group,
       );

@@ -13,9 +13,22 @@ export type Vec3 = {
   z: number;
 };
 
+export type ColorRGB = {
+  r: number;
+  g: number;
+  b: number;
+};
+
 export type Cursor = {
-  position: Vec2;
-  color: Vec3;
+  position: Vec3;
+  color: ColorRGB;
+  normal: Vec3;
+};
+
+export type Edit = {
+  uv: Vec2;
+  position: Vec3;
+  strength: number;
 };
 
 export type Camera = {

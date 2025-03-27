@@ -3,6 +3,9 @@ import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { useCoState } from "jazz-react";
+import { ID } from "jazz-tools";
+import { CursorFeed } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
@@ -10,12 +13,25 @@ import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
 
 interface PlanetProps {  
+  cursorFeedID: ID<CursorFeed>;
 }
 
-const Planet: React.FC<PlanetProps> = ({ }) => {
+const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
+/*
+  const { me } = useAccount({profile: {cursor: []}});
+  const [cursorFeed, setCursorFeed] = useState<CursorFeed | null>(null);
+  useEffect(() => {
+    if (me?.id) {
+      setCursorFeed(me.profile?.cursor);
+      console.log("cursorFeed", cursorFeed);
+    }
+  }, [me?.id]);
+*/
+  const cursorFeed = useCoState(CursorFeed,cursorFeedID, []);
+  
   const meshRef = useRef<THREE.Mesh>(null);
-  const heightMapSize = 2048; // Heightmap texture resolution
-  const shadowMapSize = 2048;
+  const heightMapSize = 1024; // Heightmap texture resolution
+  const shadowMapSize = 1024;
   const shadowMap = useFBO(shadowMapSize, shadowMapSize, {
     depthTexture: new THREE.DepthTexture(shadowMapSize, shadowMapSize, THREE.UnsignedShortType),
     depthBuffer: true,
@@ -48,13 +64,12 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
   const [hoverPosition, setHoverPosition] = useState<THREE.Vector3>(
     new THREE.Vector3(0, 0, 0),
   );
-  const [hoverNormal, setHoverNormal] = useState<THREE.Vector3>(
-    new THREE.Vector3(0, 0, 0),
-  );
+  
 
   const [hoverUV, setHoverUV] = useState<THREE.Vector2>(
     new THREE.Vector2(0, 0),
   );
+
   const [playerColor, ] = useState<THREE.Color>(
     new THREE.Color(Math.random(), Math.random(), Math.random()),
   );
@@ -96,7 +111,7 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     uShadowMap: { value: shadowMap.depthTexture },
     uLightPos: { value: new THREE.Vector3(0, 0, -3) },
     uEyePos: { value: camera.position },
-    uTime: { value: 0.0 }, // Keep time
+    uTime: { value: 0.0 },
     uAmbientLight: { value: ambientLightRef.current },
     uLightMatrix: { value: new THREE.Matrix4() },
     uPlayerColor: { value: playerColor },
@@ -128,13 +143,67 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
   const isShiftKeyPressed = useRef(false);
   const isCtrlKeyPressed = useRef(false);
   const activeMouseButton = useRef<number | null>(null);
+
   useEffect(() => {
     const updateMousePosition = (event: MouseEvent) => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
       isCtrlKeyPressed.current = event.ctrlKey;
+
+      // Convert screen coordinates to normalized device coordinates (-1 to +1)
+      mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+      mousePointer.y =-(mousePosition.current.y / window.innerHeight) * 2 + 1;
+      raycaster.current.setFromCamera(mousePointer, camera);
+      const intersects = raycaster.current.intersectObject(meshRef.current!);
+
+      if (intersects.length > 0) {
+        const { point, normal, uv } = intersects[0];
+
+        if (uv) {
+          setHoverUV(uv);
+        }
+
+        if (point) {
+          setHoverPosition(point);
+        }
+
+        if (normal) {
+          const newPosition = point
+            .clone()
+            .add(normal.clone().multiplyScalar(0.01));
+          setHoverPosition(newPosition);
+        }
+
+        cursorFeed?.push({
+          position: {
+            x: point?.x || 0,
+            y: point?.y || 0,
+            z: point?.z || 0,
+          },
+          normal: {
+            x: normal?.x || 0,
+            y: normal?.y || 0,
+            z: normal?.z || 0,
+          },
+          color: {
+            r: playerColor.r,
+            g: playerColor.g,
+            b: playerColor.b,
+          },
+        });
+      }
+
     };
 
+    const domButton = document.getElementById("action-open-session-in-another-tab");
+    const handleShareClick = () => {
+      if (!cursorFeed?.id) return;
+      const currentURL = new URL(window.location.href);
+      currentURL.searchParams.set("cursorFeedID", cursorFeed.id);
+      window.open(currentURL.toString(), "_blank");    
+      navigator.clipboard.writeText(currentURL.toString());
+    };
+    
     const handleMouseDown = (event: MouseEvent) => {
       activeMouseButton.current = event.button;
     };
@@ -148,45 +217,23 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
     window.addEventListener("mousemove", updateMousePosition);
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mouseup", handleMouseUp);
+    if (domButton) {
+      domButton.addEventListener("click", handleShareClick);
+    }
 
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
+      if (domButton) {
+        domButton.removeEventListener("click", handleShareClick);
+      }
     };
-  }, []);
+  }, [cursorFeed?.id]);
+
 
   useFrame(() => {
-    // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
-    mousePointer.y =-(mousePosition.current.y / window.innerHeight) * 2 + 1;
-    raycaster.current.setFromCamera(mousePointer, camera);
-    const intersects = raycaster.current.intersectObject(meshRef.current!);
-
-    if (intersects.length > 0) {
-      const { point, normal, uv } = intersects[0];
-
-      if (uv) {
-        setHoverUV(uv);
-      }
-
-      if (point) {
-        setHoverPosition(point);
-      }
-
-      if (normal) {
-        const newPosition = point
-          .clone()
-          .add(normal.clone().multiplyScalar(0.01));
-        setHoverNormal(normal.clone());
-        setHoverPosition(newPosition);
-      }
-    }
-    else {
-      setHoverPosition(new THREE.Vector3(0, 0, 0));
-      setHoverNormal(new THREE.Vector3(0, 0, 0));
-    }
-
+  
     if (lightRef.current) {
       // Update light camera position to match directional light
       lightRef.current.position.set(0, 0, -10);
@@ -374,8 +421,22 @@ const Planet: React.FC<PlanetProps> = ({ }) => {
           fragmentShader={planetFragmentShader}
           vertexShader={planetVertexShader}
         />
-      </mesh>\
-      <Cursor position={hoverPosition} normal={hoverNormal} color={playerColor} />
+      </mesh>
+      { 
+        cursorFeed?.id && Object.values(cursorFeed.perSession).map((cursor: unknown) => { 
+          const typedCursor = cursor as { value?: { position: any, color?: any, normal?: any }, tx: { sessionID: string } };
+        //  if (!typedCursor?.value?.position) return null;
+          return (
+            <Cursor 
+              key={typedCursor.tx.sessionID} 
+              position={typedCursor.value?.position} 
+              normal={typedCursor.value?.normal} 
+              color={typedCursor.value?.color} 
+            />
+          )
+        })
+      }
+
     </group>
   );
 };

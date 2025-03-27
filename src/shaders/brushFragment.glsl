@@ -10,14 +10,13 @@ uniform float uBrushStrength;
 void main() {
     vec4 original = texture2D(uHeightmap, vUv);
     
-    float distA = distance(vUv, uUV);
+    float dist = distance(vUv, uUV);
     
-    if (distA < uBrushSize) {
-        original.r += 0.05 * uBrushStrength * (1.0 - distA / uBrushSize);
+    if (dist < uBrushSize) {
+        original.r += 0.05 * uBrushStrength * (1.0 - dist / uBrushSize);
     }
 
-    original.r = clamp(original.r, 0.0, MAX_HEIGHT);
-    original.gba = vec3(0.0,0.0,0.0);
-
-    gl_FragColor = original;
+    float value = clamp(original.r, 0.0, MAX_HEIGHT);
+    
+    gl_FragColor = vec4(value, 0.0, 0.0, value - 0.5);
 }

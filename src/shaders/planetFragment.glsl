@@ -123,8 +123,6 @@ vec3 generateWaterTexture(vec2 uv, float disp, float time, float shoreline)
     float depthFactor = smoothstep(0.0, 0.6, disp);
     vec3 waterColor = mix(WATER_COLOR_DEEP, WATER_COLOR_SHALLOW, depthFactor);
 
-    // ----------- Improved Foam Logic ----------- //
-
     // Target foam zone
     float foamCenter = 0.6; // Where foam is strongest
     float foamWidth = 0.04;  // Spread of foam band

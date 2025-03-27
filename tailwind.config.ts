@@ -15,6 +15,20 @@ const config: Config = {
           xl: "600px",
         },
       },
+      animation: {
+        fadeOut: "fadeOut 1s ease-in-out forwards", // start fade after 2s
+        fadeIn: "fadeIn 1s ease-in-out forwards", // start fade after 2s
+      },
+      keyframes: {
+        fadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
     },
   },
   plugins: [],

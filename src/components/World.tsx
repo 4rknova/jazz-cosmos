@@ -1,21 +1,20 @@
-import { useState } from "react";
 import { useAccount } from "jazz-react";
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
-import { CursorFeed } from "../schema";export default function World({
-  isCameraControlFrozen: isCameraControlFrozen,
-}: { isCameraControlFrozen: boolean }) {
 
-  const { me } = useAccount();
-  const [cursorFeed, setCursorFeed] = useState<CursorFeed | null>(null);
-  const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
+type WorldProps = {
+  isCameraControlFrozen: boolean;
+  worldId?: string | null;
+};
 
-  // Default camera position to use if none is saved
+export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
+
   const defaultCameraPosition = {x: 5, y: 0, z: -5};
-
+  const { me } = useAccount();
+  
   // Function to handle camera position changes
   const handleCameraChange = (position: {
     x: number;
@@ -28,11 +27,10 @@ import { CursorFeed } from "../schema";export default function World({
     if (session) {
       // Update camera position in profile
       session.push({position: {x: position.x, y: position.y, z: position.z}});
-      console.log("Submit new camera position", session);
-
     }
   };
-
+ 
+  console.log(worldId);
   return (
     <Canvas
       frameloop="always"
@@ -70,15 +68,17 @@ import { CursorFeed } from "../schema";export default function World({
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
       />
+
       <Stars count={100} size={5} minDistance={3} />
-      <Planet />
+      {(worldId || me?.profile?.cursor?.id) && (
+        <Planet cursorFeedID={worldId ?? me?.profile?.cursor?.id} />
+      )}
       
       <CameraController
         onCameraChange={handleCameraChange}
         isCameraControlFrozen={isCameraControlFrozen}
         customCameraPosition={me?.root?.camera?.byMe?.value?.position}
       />
-      {/* */}
     </Canvas>
   );
 }
