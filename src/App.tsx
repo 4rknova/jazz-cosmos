@@ -69,7 +69,7 @@ function App() {
 
       {/* Main App */}
       {splashStage >= 4 &&  (
-        <main className="w-full h-dvh bg-black">
+        <main className="w-full h-dvh bg-black ">
         <World worldId={worldId as ID<CursorFeed>} isCameraControlFrozen={isCameraControlFrozen} />
 
           <div className="absolute top-0 left-0 pt-5pl-5 bg-gray-200 backdrop-blur-sm bg-transparent

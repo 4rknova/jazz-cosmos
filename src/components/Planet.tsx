@@ -5,19 +5,22 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCoState } from "jazz-react";
 import { ID } from "jazz-tools";
-import { CursorFeed } from "../schema";
+import { CursorFeed, EditorFeed } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
+
 interface PlanetProps {  
   cursorFeedID: ID<CursorFeed>;
+  editorFeedID: ID<EditorFeed>;
 }
 
-const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
+const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
 
   const cursorFeed = useCoState(CursorFeed,cursorFeedID, []);
+  const editorFeed = useCoState(EditorFeed,editorFeedID, []);
   
   const meshRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -186,18 +189,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
       }
 
     };
-
-    const domButton = document.getElementById("action-open-session-in-another-tab");
-    
-    const handleShareClick = () => {
-      /*
-      const worldURL = getWorldURL();
-      if (worldURL) {
-        window.open(worldURL, "_blank");    
-        navigator.clipboard.writeText(worldURL);
-      }
-        */
-    };
     
     const handleMouseDown = (event: MouseEvent) => {
       activeMouseButton.current = event.button;
@@ -212,19 +203,32 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
     window.addEventListener("mousemove", updateMousePosition);
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mouseup", handleMouseUp);
-    if (domButton) {
-      domButton.addEventListener("click", handleShareClick);
-    }
-
+   
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
-      if (domButton) {
-        domButton.removeEventListener("click", handleShareClick);
-      }
     };
-  }, [cursorFeed?.id]);
+  }, [cursorFeed]);
+
+
+  useEffect(() => {
+    for (const { uv, position, strength } of pendingPoints) {
+        editorFeed?.push({
+          position: {
+            x: position?.x || 0,
+            y: position?.y || 0,
+            z: position?.z || 0,
+          },
+          uv: {
+            x: uv?.x || 0,
+            y: uv?.y || 0,
+          },
+          strength: strength,          
+        });
+    }
+  }, [pendingPoints]);
+
 
 
   useFrame(() => {
@@ -315,7 +319,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
       const { uv, point } = intersects[0];
       if (uv) {
         const strength = isShiftKeyPressed.current ? -1 : 1;
-
         // Append new point to the list
         setPendingPoints((prevPoints) => [...prevPoints, { uv, position: point, strength }]);
       }

@@ -81,7 +81,7 @@ export function CameraController({ onCameraChange, isCameraControlFrozen: isCame
       enableRotate={!isCameraControlFrozen}
       enablePan={!isCameraControlFrozen}
       reverseOrbit={true}
-      minDistance={2.0}
+      minDistance={1.5}
       maxDistance={5}
       onEnd={() => {
         !isCameraControlFrozen && (() => {

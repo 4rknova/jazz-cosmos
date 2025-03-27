@@ -40,7 +40,7 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
  
 
   const cursorFeedID = worldId ?? me?.profile?.cursor?.id;
-  console.log(cursorFeedID);
+  const editorFeedID = worldId ?? me?.profile?.editor?.id;
 
   const getWorldURL = () => {
     if (!cursorFeedID) return;
@@ -114,7 +114,7 @@ useEffect(() => {
 
       <Stars count={100} size={5} minDistance={3} />
       {cursorFeedID && (
-         <Planet cursorFeedID={cursorFeedID} />
+         <Planet cursorFeedID={cursorFeedID} editorFeedID={editorFeedID} />
       )}
       
       <CameraController

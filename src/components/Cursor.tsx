@@ -33,7 +33,7 @@ const Cursor: React.FC<CursorProps> = ({ position, normal, color}) => {
                     uUV: { value: {x: position.x, y: position.y, z: position.z } },
                     uBrushSize: { value: 0.01 },
                     uBrushStrength: { value: 1.0 },
-                    uPlayerColor: { value: {r: color.r, g: color.g, b: color.b } }   
+                    uPlayerColor: { value: {r: color?.r || 0.0, g: color?.g || 0.0, b: color?.b || 0.0 } }   
                 }}
                 fragmentShader={pointerFragmentShader}
                 vertexShader={pointerVertexShader}
