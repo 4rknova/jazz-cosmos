@@ -7,7 +7,7 @@ import { CameraController } from "./CameraController";
 import { ID } from "jazz-tools";
 import { CursorFeed } from "../schema";
 
-const skybox = "/public/resources/galactic_plane_hazy_nebulae_1.jpg";
+const skybox = "/resources/galactic_plane_hazy_nebulae_1.jpg";
 
 type WorldProps = {
   isCameraControlFrozen: boolean;
