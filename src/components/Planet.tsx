@@ -209,7 +209,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [cursorFeed]);
+  }, [cursorFeed?.id]);
 
 
   useEffect(() => {
@@ -423,7 +423,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
       { 
         cursorFeed?.id && Object.values(cursorFeed.perSession).map((cursor: unknown) => { 
           const typedCursor = cursor as { value?: { position: any, color?: any, normal?: any }, tx: { sessionID: string } };
-        //  if (!typedCursor?.value?.position) return null;
+
           return (
             <Cursor 
               key={typedCursor.tx.sessionID} 

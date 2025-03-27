@@ -5,7 +5,7 @@ import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
 import { ID } from "jazz-tools";
-import { CursorFeed } from "../schema";
+import { CursorFeed, EditorFeed } from "../schema";
 import { useRef, useEffect } from "react";
 import ReactDOMClient from "react-dom/client";
 import InfoPanel from "./InfoPanel";
@@ -113,8 +113,8 @@ useEffect(() => {
       />
 
       <Stars count={100} size={5} minDistance={3} />
-      {cursorFeedID && (
-         <Planet cursorFeedID={cursorFeedID} editorFeedID={editorFeedID} />
+      {cursorFeedID && editorFeedID && (
+         <Planet cursorFeedID={cursorFeedID as ID<CursorFeed>} editorFeedID={editorFeedID as ID<EditorFeed>} />
       )}
       
       <CameraController
