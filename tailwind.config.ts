@@ -4,6 +4,9 @@ const config: Config = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      colors: {
+        primary: "#5e7f9b",
+      },
       container: {
         center: true,
         padding: {

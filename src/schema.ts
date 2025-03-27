@@ -1,5 +1,6 @@
 import { Account, Profile, Group, CoFeed, CoMap, co } from "jazz-tools";
 import type { Cursor, Camera, Edit } from "./types";
+import { generatePlanetName } from "./utils";
 
 export class CursorFeed extends CoFeed.Of(co.json<Cursor>()) {}
 export class EditorFeed extends CoFeed.Of(co.json<Edit>()) {}
@@ -11,6 +12,7 @@ export class CosmosRoot extends CoMap {
 
 export class CosmosProfile extends Profile {
   name = co.string;
+  planet = co.string;
   cursor = co.ref(CursorFeed);
   editor = co.ref(EditorFeed);
 }
@@ -38,6 +40,7 @@ export class CosmosAccount extends Account {
           name: "Anonymous user",
           cursor: CursorFeed.create([], { owner: group }),
           editor: EditorFeed.create([], { owner: group }),
+          planet: generatePlanetName(),
         },
         group,
       );

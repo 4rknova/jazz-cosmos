@@ -6,6 +6,10 @@ import Planet from "./Planet";
 import { CameraController } from "./CameraController";
 import { ID } from "jazz-tools";
 import { CursorFeed } from "../schema";
+import { useRef, useEffect } from "react";
+import ReactDOMClient from "react-dom/client";
+import InfoPanel from "./InfoPanel";
+
 
 const skybox = "/resources/galactic_plane_hazy_nebulae_1.jpg";
 
@@ -34,9 +38,41 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
     }
   };
  
-  console.log(worldId);
 
   const cursorFeedID = worldId ?? me?.profile?.cursor?.id;
+  console.log(cursorFeedID);
+
+  const getWorldURL = () => {
+    if (!cursorFeedID) return;
+    const currentURL = new URL(window.location.origin);
+    currentURL.searchParams.set("world", cursorFeedID);
+    return currentURL.toString();
+  }
+
+  // define a ref to hold the root
+const rootRef = useRef<ReactDOMClient.Root | null>(null);
+  
+useEffect(() => {
+  if (cursorFeedID) {
+    const cursorFeed = me?.profile?.cursor;
+    if (cursorFeed) {
+      const domQR = document.getElementById("world-info-panel");
+      if (domQR) {
+        // only create the root once
+        if (!rootRef.current) {
+          rootRef.current = ReactDOMClient.createRoot(domQR);
+        }
+        rootRef.current.render(
+          <InfoPanel
+            worldURL={getWorldURL() ?? ""}
+            cursorFeed={cursorFeed}
+            worldName={me?.profile?.planet ?? ""}
+          />
+        );
+      }
+    }
+  }
+}, [cursorFeedID, me]);
 
   return (
     <Canvas

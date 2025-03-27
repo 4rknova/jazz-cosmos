@@ -11,22 +11,12 @@ import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
-
 interface PlanetProps {  
   cursorFeedID: ID<CursorFeed>;
 }
 
 const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
-/*
-  const { me } = useAccount({profile: {cursor: []}});
-  const [cursorFeed, setCursorFeed] = useState<CursorFeed | null>(null);
-  useEffect(() => {
-    if (me?.id) {
-      setCursorFeed(me.profile?.cursor);
-      console.log("cursorFeed", cursorFeed);
-    }
-  }, [me?.id]);
-*/
+
   const cursorFeed = useCoState(CursorFeed,cursorFeedID, []);
   
   const meshRef = useRef<THREE.Mesh>(null);
@@ -144,7 +134,9 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
   const isCtrlKeyPressed = useRef(false);
   const activeMouseButton = useRef<number | null>(null);
 
+
   useEffect(() => {
+
     const updateMousePosition = (event: MouseEvent) => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
@@ -196,12 +188,15 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID }) => {
     };
 
     const domButton = document.getElementById("action-open-session-in-another-tab");
+    
     const handleShareClick = () => {
-      if (!cursorFeed?.id) return;
-      const currentURL = new URL(window.location.href);
-      currentURL.searchParams.set("cursorFeedID", cursorFeed.id);
-      window.open(currentURL.toString(), "_blank");    
-      navigator.clipboard.writeText(currentURL.toString());
+      /*
+      const worldURL = getWorldURL();
+      if (worldURL) {
+        window.open(worldURL, "_blank");    
+        navigator.clipboard.writeText(worldURL);
+      }
+        */
     };
     
     const handleMouseDown = (event: MouseEvent) => {
