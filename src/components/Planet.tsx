@@ -5,20 +5,26 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCoState } from "jazz-react";
 import { ID } from "jazz-tools";
-import { CursorFeed } from "../schema";
+import { CursorFeed, ListOfTerrainEdits, TerrainEdit } from "../schema";
+import { useAccount } from "jazz-react";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
-
+import { TerrainSample } from "../types";
 interface PlanetProps {  
   cursorFeedId: ID<CursorFeed>;
 }
 
 const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
+  const { me } = useAccount();
+
+  const edits = useCoState(ListOfTerrainEdits, me?.profile?.world?.edits?.id, []);
+
   const cursorFeed = useCoState(CursorFeed, cursorFeedId, []);
+  const planetEdits = useCoState(ListOfTerrainEdits, me?.profile?.world?.edits?.id, []);
   
   const meshRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -135,7 +141,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
   const isCtrlKeyPressed = useRef(false);
   const activeMouseButton = useRef<number | null>(null);
 
-
   // Handle mouse movement and click events
   useEffect(() => {
 
@@ -237,6 +242,19 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
     }
   };
 
+  useEffect(() => {
+    if (planetEdits === undefined || pendingPoints.length === 0) return;
+
+    pendingPoints.forEach(point => {
+      planetEdits?.push({
+        uv: { x: point.uv.x, y: point.uv.y },
+        position: { x: point.position.x, y: point.position.y, z: point.position.z },
+        strength: point.strength
+      });
+    });
+
+  }, [pendingPoints]);
+    
   // Render the scene
   useFrame(() => {
   
@@ -270,17 +288,37 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
     if (pendingPoints.length > 0) {
       // Choose the inactive buffer for writing
       const nextHeightmap = (activeHeightmap === heightmapA ? heightmapB : heightmapA);
+
+      brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
       // Local player: Render each point to the heightmap
-      for (const { uv, position, strength } of pendingPoints) {
-        brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
+      for (const { uv, position, strength } of pendingPoints) {  
         brushMaterial.uniforms.uUV.value = uv;
         brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
         brushMaterial.uniforms.uBrushPosition.value = position;
+
         gl.setRenderTarget(nextHeightmap);
         gl.clear();
         gl.render(quadScene, quadCamera);
       }
+/*
+      for (const samples of planetEdits) {
+        
+        if (edit?.samples.length > 0) {
+        for (const sample of edit?.samples) {
+          brushMaterial.uniforms.uUV.value = sample.uv;
+          brushMaterial.uniforms.uBrushStrength.value = sample.strength * 0.1;
+          brushMaterial.uniforms.uBrushPosition.value = sample.position;
 
+          gl.setRenderTarget(nextHeightmap);
+          gl.clear();
+          gl.render(quadScene, quadCamera);
+        }
+      
+
+        console.log(samples.length);
+      }
+        */
+  
       // Swap buffers (nextHeightmap becomes active)
       setActiveHeightmap(nextHeightmap);
 

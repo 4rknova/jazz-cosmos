@@ -9,11 +9,7 @@ export class CosmosRoot extends CoMap {
   camera = co.ref(CameraFeed);
 }
 
-export class TerrainEdit extends CoMap {
-  samples = co.json<TerrainSample[]>();
-}
-
-class ListOfTerrainEdits extends CoList.Of(co.ref(TerrainEdit)) {}
+export class ListOfTerrainEdits extends CoList.Of(co.json<TerrainSample>) {}
 
 export class World extends CoMap {
   name = co.string;
@@ -52,7 +48,7 @@ export class CosmosAccount extends Account {
               name: generatePlanetName(),
               deepSpaceMap: getRandomSpheremap(),
               cursor: CursorFeed.create([], { owner: group }),
-              edits: ListOfTerrainEdits.create([], group),
+              edits: ListOfTerrainEdits.create([], { owner: group }),
             },
             group,
           ),
