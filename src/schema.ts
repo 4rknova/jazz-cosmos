@@ -1,20 +1,29 @@
-import { Account, Profile, Group, CoFeed, CoMap, co } from "jazz-tools";
-import type { Cursor, Camera, Edit } from "./types";
-import { generatePlanetName } from "./utils";
+import { Account, Profile, Group, CoFeed, CoMap, CoList, co } from "jazz-tools";
+import type { Cursor, Camera, TerrainSample } from "./types";
+import { generatePlanetName, getRandomSpheremap } from "./utils";
 
 export class CursorFeed extends CoFeed.Of(co.json<Cursor>()) {}
-export class EditorFeed extends CoFeed.Of(co.json<Edit>()) {}
 export class CameraFeed extends CoFeed.Of(co.json<Camera>()) {}
 
 export class CosmosRoot extends CoMap {
   camera = co.ref(CameraFeed);
 }
 
-export class CosmosProfile extends Profile {
+export class TerrainEdit extends CoMap {
+  samples = co.json<TerrainSample[]>();
+}
+
+class ListOfTerrainEdits extends CoList.Of(co.ref(TerrainEdit)) {}
+
+export class World extends CoMap {
   name = co.string;
-  planet = co.string;
+  deepSpaceMap = co.string;
   cursor = co.ref(CursorFeed);
-  editor = co.ref(EditorFeed);
+  edits = co.ref(ListOfTerrainEdits);
+}
+
+export class CosmosProfile extends Profile {
+  world = co.ref(World);
 }
 
 export class CosmosAccount extends Account {
@@ -38,9 +47,15 @@ export class CosmosAccount extends Account {
       this.profile = CosmosProfile.create(
         {
           name: "Anonymous user",
-          cursor: CursorFeed.create([], { owner: group }),
-          editor: EditorFeed.create([], { owner: group }),
-          planet: generatePlanetName(),
+          world: World.create(
+            {
+              name: generatePlanetName(),
+              deepSpaceMap: getRandomSpheremap(),
+              cursor: CursorFeed.create([], { owner: group }),
+              edits: ListOfTerrainEdits.create([], group),
+            },
+            group,
+          ),
         },
         group,
       );

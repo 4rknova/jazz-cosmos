@@ -25,7 +25,7 @@ export type Cursor = {
   normal: Vec3;
 };
 
-export type Edit = {
+export type TerrainSample = {
   uv: Vec2;
   position: Vec3;
   strength: number;

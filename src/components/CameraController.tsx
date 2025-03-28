@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+
 interface CameraControllerProps {
   onCameraChange: (
     position: { x: number; y: number; z: number },
@@ -21,7 +22,6 @@ export function CameraController({ onCameraChange, isCameraControlFrozen: isCame
   const controlsRef = useRef(null);
   const animationFrameRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
-
 
   // Function to smoothly interpolate the camera position
   const smoothTransition = (start: THREE.Vector3, end: THREE.Vector3, duration: number) => {

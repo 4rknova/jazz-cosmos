@@ -5,21 +5,18 @@ import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
 import { ID } from "jazz-tools";
-import { CursorFeed, EditorFeed } from "../schema";
+import { CursorFeed } from "../schema";
 import { useRef, useEffect } from "react";
 import ReactDOMClient from "react-dom/client";
 import InfoPanel from "./InfoPanel";
-
-
-const skybox = "/resources/galactic_plane_hazy_nebulae_1.jpg";
+import { spheremapImages } from "../utils";
 
 type WorldProps = {
+  cursorFeedId?: ID<CursorFeed> | null;
   isCameraControlFrozen: boolean;
-  worldId?: ID<CursorFeed> | null;
 };
 
-export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
-
+export default function Space({ cursorFeedId, isCameraControlFrozen }: WorldProps) {
   const defaultCameraPosition = {x: 5, y: 0, z: -5};
   const { me } = useAccount();
   
@@ -38,10 +35,8 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
     }
   };
  
-
-  const cursorFeedID = worldId ?? me?.profile?.cursor?.id;
-  const editorFeedID = worldId ?? me?.profile?.editor?.id;
-
+  const cursorFeedID = cursorFeedId ?? me?.profile?.world?.cursor?.id;
+  
   const getWorldURL = () => {
     if (!cursorFeedID) return;
     const currentURL = new URL(window.location.origin);
@@ -49,30 +44,29 @@ export default function World({ isCameraControlFrozen, worldId }: WorldProps) {
     return currentURL.toString();
   }
 
-  // define a ref to hold the root
-const rootRef = useRef<ReactDOMClient.Root | null>(null);
-  
-useEffect(() => {
-  if (cursorFeedID) {
-    const cursorFeed = me?.profile?.cursor;
-    if (cursorFeed) {
-      const domQR = document.getElementById("world-info-panel");
-      if (domQR) {
-        // only create the root once
-        if (!rootRef.current) {
-          rootRef.current = ReactDOMClient.createRoot(domQR);
+  const rootRef = useRef<ReactDOMClient.Root | null>(null);
+    
+  useEffect(() => {
+    if (cursorFeedID) {
+      const cursorFeed = me?.profile?.world?.cursor;
+      if (cursorFeed) {
+        const root = document.getElementById("world-info-panel");
+        if (root) {
+          // only create the root once
+          if (!rootRef.current) {
+            rootRef.current = ReactDOMClient.createRoot(root);
+          }
+          rootRef.current.render(
+            <InfoPanel
+              worldURL={getWorldURL() ?? ""}
+              cursorFeed={cursorFeed}
+              worldName={me?.profile?.world?.name ?? ""}
+            />
+          );
         }
-        rootRef.current.render(
-          <InfoPanel
-            worldURL={getWorldURL() ?? ""}
-            cursorFeed={cursorFeed}
-            worldName={me?.profile?.planet ?? ""}
-          />
-        );
       }
     }
-  }
-}, [cursorFeedID, me]);
+  }, [cursorFeedID, me]);``
 
   return (
     <Canvas
@@ -93,7 +87,7 @@ useEffect(() => {
     >
       <Environment
         background={true}
-        files={skybox}
+        files={ me?.profile?.world?.deepSpaceMap ?? spheremapImages[0]}
       />
 
       <ambientLight intensity={0.5} />
@@ -112,9 +106,9 @@ useEffect(() => {
         shadow-camera-bottom={-10}
       />
 
-      <Stars count={100} size={5} minDistance={3} />
-      {cursorFeedID && editorFeedID && (
-         <Planet cursorFeedID={cursorFeedID as ID<CursorFeed>} editorFeedID={editorFeedID as ID<EditorFeed>} />
+      <Stars count={250} size={6} minDistance={4} />
+      {cursorFeedID && (
+         <Planet cursorFeedId={cursorFeedID as ID<CursorFeed>} />
       )}
       
       <CameraController

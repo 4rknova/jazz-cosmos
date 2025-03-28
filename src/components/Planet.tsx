@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCoState } from "jazz-react";
 import { ID } from "jazz-tools";
-import { CursorFeed, EditorFeed } from "../schema";
+import { CursorFeed } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
@@ -13,14 +13,12 @@ import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
 
 interface PlanetProps {  
-  cursorFeedID: ID<CursorFeed>;
-  editorFeedID: ID<EditorFeed>;
+  cursorFeedId: ID<CursorFeed>;
 }
 
-const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
+const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
-  const cursorFeed = useCoState(CursorFeed,cursorFeedID, []);
-  const editorFeed = useCoState(EditorFeed,editorFeedID, []);
+  const cursorFeed = useCoState(CursorFeed, cursorFeedId, []);
   
   const meshRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -138,6 +136,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
   const activeMouseButton = useRef<number | null>(null);
 
 
+  // Handle mouse movement and click events
   useEffect(() => {
 
     const updateMousePosition = (event: MouseEvent) => {
@@ -211,26 +210,34 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
     };
   }, [cursorFeed?.id]);
 
+  const handleTerrainEdit = () => {
+    // Only perform terrain editing with left mouse button (0)
+    if (
+      activeMouseButton.current !== 0 ||
+      !isDrawingRef.current ||
+      !meshRef.current
+    )
+      return;
 
-  useEffect(() => {
-    for (const { uv, position, strength } of pendingPoints) {
-        editorFeed?.push({
-          position: {
-            x: position?.x || 0,
-            y: position?.y || 0,
-            z: position?.z || 0,
-          },
-          uv: {
-            x: uv?.x || 0,
-            y: uv?.y || 0,
-          },
-          strength: strength,          
-        });
+    // Convert screen coordinates to normalized device coordinates (-1 to +1)
+    mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
+    mousePointer.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
+
+    // Perform raycasting
+    raycaster.current.setFromCamera(mousePointer, camera);
+    const intersects = raycaster.current.intersectObject(meshRef.current);
+
+    if (intersects.length > 0) {
+      const { uv, point } = intersects[0];
+      if (uv) {
+        const strength = isShiftKeyPressed.current ? -1 : 1;
+        // Append new point to the list
+        setPendingPoints((prevPoints) => [...prevPoints, { uv, position: point, strength }]);
+      }
     }
-  }, [pendingPoints]);
+  };
 
-
-
+  // Render the scene
   useFrame(() => {
   
     if (lightRef.current) {
@@ -262,9 +269,8 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
 
     if (pendingPoints.length > 0) {
       // Choose the inactive buffer for writing
-      const nextHeightmap =
-        activeHeightmap === heightmapA ? heightmapB : heightmapA;
-      // Render each point to the heightmap
+      const nextHeightmap = (activeHeightmap === heightmapA ? heightmapB : heightmapA);
+      // Local player: Render each point to the heightmap
       for (const { uv, position, strength } of pendingPoints) {
         brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
         brushMaterial.uniforms.uUV.value = uv;
@@ -277,8 +283,8 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
 
       // Swap buffers (nextHeightmap becomes active)
       setActiveHeightmap(nextHeightmap);
-      // Clear pending points after processing
-      setPendingPoints([]);
+
+      setPendingPoints([]);      
     }
 
     gl.setRenderTarget(null);
@@ -298,33 +304,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
     }
   };
 
-  const handleTerrainEdit = () => {
-    // Only perform terrain editing with left mouse button (0)
-    if (
-      activeMouseButton.current !== 0 ||
-      !isDrawingRef.current ||
-      !meshRef.current
-    )
-      return;
-
-    // Convert screen coordinates to normalized device coordinates (-1 to +1)
-    mousePointer.x = (mousePosition.current.x / window.innerWidth) * 2 - 1;
-    mousePointer.y = -(mousePosition.current.y / window.innerHeight) * 2 + 1;
-
-    // Perform raycasting
-    raycaster.current.setFromCamera(mousePointer, camera);
-    const intersects = raycaster.current.intersectObject(meshRef.current);
-
-    if (intersects.length > 0) {
-      const { uv, point } = intersects[0];
-      if (uv) {
-        const strength = isShiftKeyPressed.current ? -1 : 1;
-        // Append new point to the list
-        setPendingPoints((prevPoints) => [...prevPoints, { uv, position: point, strength }]);
-      }
-    }
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl + H
@@ -338,7 +317,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gl, activeHeightmap]);
-
 
   function openHeightmapInNewTab(renderer: THREE.WebGLRenderer, heightmap: THREE.WebGLRenderTarget) {
     const size = heightmap.width;
@@ -402,8 +380,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedID, editorFeedID }) => {
     }
   }
   
-  
-
   return (
     <group>
       <mesh

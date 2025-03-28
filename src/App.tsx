@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import World from "./components/World.tsx";
+import Space from "./components/Space.tsx";
 import { Logo } from "./components/Logo.tsx";
 import { CursorFeed } from "./schema.ts";
 import { ID } from "jazz-tools";
+import CameraPanel from "./components/CameraPanel.tsx";
 
 function App() {
-  const [isCameraControlFrozen, ] = useState(false);
   const [splashStage, setSplashStage] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
   const [worldId, setWorldId] = useState<string | null>(null);
+  const [isCameraControlFrozen, setIsCameraControlFrozen] = useState(false);
 
   useEffect(() => {
     // Capture ?world=... from URL
@@ -70,27 +71,23 @@ function App() {
       {/* Main App */}
       {splashStage >= 4 &&  (
         <main className="w-full h-dvh bg-black ">
-        <World worldId={worldId as ID<CursorFeed>} isCameraControlFrozen={isCameraControlFrozen} />
-
+          <Space cursorFeedId={worldId as ID<CursorFeed> } isCameraControlFrozen={isCameraControlFrozen} />
           <div className="absolute top-0 left-0 pt-5pl-5 bg-gray-200 backdrop-blur-sm bg-transparent
            space-y-5 w-60 h-screen flex flex-col items-center justify-top border-r-4 border-primary
             border-opacity-10 border-shadow-lg">
-          <img
-            src="/resources/logo.png"
-            alt="Logo"
-            className="w-48 object-contain"
-          />
+            <img
+              src="/resources/logo.png"
+              alt="Logo"
+              className="w-48 object-contain"
+            />
 
-          <div id="world-info-panel" className="text-primary flex flex-col items-center justify-center p-2 w-100 h-100"></div>
-
-          {/*           
-          <button
-            className="ml-10 w-half bg-white text-whitepx-4 py-2 px-4 rounded-md hover:bg-gray-100 transition-colors font-medium"
-            onClick={() => setIsCameraControlFrozen((prev) => !prev)}
-          >
-            {(isCameraControlFrozen ? "Unfreeze"  : "Freeze") + " Camera Controls"}
-          </button> */}
-
+            <div id="world-info-panel" className="text-primary flex flex-col items-center justify-center p-2 w-100 h-100"></div>
+            <div id="camera-panel" className="text-primary flex flex-col items-center justify-center p-2 w-100 h-100">
+              <CameraPanel
+                isCameraControlFrozen={isCameraControlFrozen}
+                setIsCameraControlFrozen={setIsCameraControlFrozen}
+              />
+            </div>
           </div>
         </main>
       )}

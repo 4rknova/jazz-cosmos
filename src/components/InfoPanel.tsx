@@ -7,6 +7,7 @@ interface InfoPanelProps {
 }
 
 const InfoPanel = ({ worldURL, cursorFeed, worldName }: InfoPanelProps) => {
+
   return (
     <>
         <h1 className="text-primary text-2xl font-bold mb-5">{worldName}</h1>
