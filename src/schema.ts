@@ -4,12 +4,11 @@ import { generatePlanetName, getRandomSpheremap } from "./utils";
 
 export class CursorFeed extends CoFeed.Of(co.json<Cursor>()) {}
 export class CameraFeed extends CoFeed.Of(co.json<Camera>()) {}
+export class ListOfTerrainEdits extends CoList.Of(co.json<TerrainSample>()) {}
 
 export class CosmosRoot extends CoMap {
   camera = co.ref(CameraFeed);
 }
-
-export class ListOfTerrainEdits extends CoList.Of(co.json<TerrainSample>) {}
 
 export class World extends CoMap {
   name = co.string;

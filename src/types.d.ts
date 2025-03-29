@@ -27,7 +27,6 @@ export type Cursor = {
 
 export type TerrainSample = {
   uv: Vec2;
-  position: Vec3;
   strength: number;
 };
 

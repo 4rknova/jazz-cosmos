@@ -12,7 +12,6 @@ import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
-import { TerrainSample } from "../types";
 interface PlanetProps {  
   cursorFeedId: ID<CursorFeed>;
 }
@@ -20,8 +19,6 @@ interface PlanetProps {
 const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
   const { me } = useAccount();
-
-  const edits = useCoState(ListOfTerrainEdits, me?.profile?.world?.edits?.id, []);
 
   const cursorFeed = useCoState(CursorFeed, cursorFeedId, []);
   const planetEdits = useCoState(ListOfTerrainEdits, me?.profile?.world?.edits?.id, []);
@@ -73,7 +70,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
   const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<
-    { uv: THREE.Vector2; position: THREE.Vector3; strength: number }[]
+    { uv: THREE.Vector2; strength: number }[]
   >([]);
 
   // Shadow camera setup
@@ -233,18 +230,18 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
     const intersects = raycaster.current.intersectObject(meshRef.current);
 
     if (intersects.length > 0) {
-      const { uv, point } = intersects[0];
+      const { uv } = intersects[0];
       if (uv) {
         const strength = isShiftKeyPressed.current ? -1 : 1;
         // Append new point to the list
-        setPendingPoints((prevPoints) => [...prevPoints, { uv, position: point, strength }]);
+        setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
       }
     }
   };
 
   useEffect(() => {
     if (planetEdits === undefined || pendingPoints.length === 0) return;
-
+/*
     pendingPoints.forEach(point => {
       planetEdits?.push({
         uv: { x: point.uv.x, y: point.uv.y },
@@ -252,8 +249,20 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
         strength: point.strength
       });
     });
+*/
+
+    planetEdits?.push(...pendingPoints.map(point => ({ 
+      ...
+      {
+        uv: { x: point.uv.x, y: point.uv.y },
+        strength: point.strength
+      }
+     })));
 
   }, [pendingPoints]);
+
+
+  const renderedSamplesRef = useRef(new Set<string>());
     
   // Render the scene
   useFrame(() => {
@@ -285,39 +294,40 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
     handleTerrainEdit();
 
-    if (pendingPoints.length > 0) {
+    if (planetEdits?.length - renderedSamplesRef.current.size > 0) {
       // Choose the inactive buffer for writing
       const nextHeightmap = (activeHeightmap === heightmapA ? heightmapB : heightmapA);
-
       brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
+      gl.setRenderTarget(nextHeightmap);
       // Local player: Render each point to the heightmap
+
+      /*
       for (const { uv, position, strength } of pendingPoints) {  
         brushMaterial.uniforms.uUV.value = uv;
         brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
         brushMaterial.uniforms.uBrushPosition.value = position;
-
-        gl.setRenderTarget(nextHeightmap);
+        
         gl.clear();
         gl.render(quadScene, quadCamera);
       }
-/*
-      for (const samples of planetEdits) {
-        
-        if (edit?.samples.length > 0) {
-        for (const sample of edit?.samples) {
-          brushMaterial.uniforms.uUV.value = sample.uv;
-          brushMaterial.uniforms.uBrushStrength.value = sample.strength * 0.1;
-          brushMaterial.uniforms.uBrushPosition.value = sample.position;
+      */
+      let count = 0;
 
-          gl.setRenderTarget(nextHeightmap);
-          gl.clear();
-          gl.render(quadScene, quadCamera);
-        }
-      
+      for (const sample of planetEdits) {
+        if (renderedSamplesRef.current.has(sample)) continue;
+        count++;
+        const uv = new THREE.Vector2(sample.uv.x, sample.uv.y);
+        const strength = sample.strength * 0.2;
 
-        console.log(samples.length);
+        brushMaterial.uniforms.uUV.value = uv;
+        brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
+
+        gl.clear();
+        gl.render(quadScene, quadCamera);
+
+        renderedSamplesRef.current.add(sample);
       }
-        */
+      console.log("Rendered", count, "samples");
   
       // Swap buffers (nextHeightmap becomes active)
       setActiveHeightmap(nextHeightmap);
