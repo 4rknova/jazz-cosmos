@@ -5,23 +5,26 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCoState } from "jazz-react";
 import { ID } from "jazz-tools";
-import { CursorFeed, ListOfTerrainEdits, TerrainEdit } from "../schema";
-import { useAccount } from "jazz-react";
+import { World } from "../schema";
 import brushFragmentShader from "../shaders/brushFragment.glsl";
 import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
+
 interface PlanetProps {  
-  cursorFeedId: ID<CursorFeed>;
+  worldId: ID<World>;
+  onProgress?: (percent: number) => void;
+  onComplete?: () => void;
 }
 
-const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
+const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplete }) => {
+  useEffect(() => {
+    console.log("Planet mounted");
+    return () => console.log("Planet unmounted");
+  }, []);
 
-  const { me } = useAccount();
-
-  const cursorFeed = useCoState(CursorFeed, cursorFeedId, []);
-  const planetEdits = useCoState(ListOfTerrainEdits, me?.profile?.world?.edits?.id, []);
+  const world = useCoState(World, worldId, {resolve: true});
   
   const meshRef = useRef<THREE.Mesh>(null);
   const heightMapSize = 1024; // Heightmap texture resolution
@@ -49,8 +52,11 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
     wrapS: THREE.RepeatWrapping, // Optional wrapping modes
     wrapT: THREE.RepeatWrapping,
   });
-  const [activeHeightmap, setActiveHeightmap] = useState(heightmapA);
-  const { camera, gl, clock } = useThree();
+  
+  const pingHeightmapRef = useRef(heightmapA);
+  const pongHeightmapRef = useRef(heightmapB);
+
+  const { camera, gl } = useThree();
   const scene = new THREE.Scene();
   const raycaster = useRef(new THREE.Raycaster());
 
@@ -124,12 +130,14 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
     vertexShader: brushVertexShader,
     fragmentShader: brushFragmentShader,
   });
+
   scene.add(
     new THREE.Mesh(
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
     ),
   );
+
   const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), brushMaterial);
   quadScene.add(quadMesh);
 
@@ -140,7 +148,6 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
   // Handle mouse movement and click events
   useEffect(() => {
-
     const updateMousePosition = (event: MouseEvent) => {
       mousePosition.current = { x: event.clientX, y: event.clientY };
       isShiftKeyPressed.current = event.shiftKey;
@@ -170,7 +177,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
           setHoverPosition(newPosition);
         }
 
-        cursorFeed?.push({
+        world?.cursor?.push({
           position: {
             x: point?.x || 0,
             y: point?.y || 0,
@@ -210,7 +217,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [cursorFeed?.id]);
+  }, [world?.cursor?.id]);
 
   const handleTerrainEdit = () => {
     // Only perform terrain editing with left mouse button (0)
@@ -240,103 +247,91 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
   };
 
   useEffect(() => {
-    if (planetEdits === undefined || pendingPoints.length === 0) return;
-/*
-    pendingPoints.forEach(point => {
-      planetEdits?.push({
+    if (!world?.edits || pendingPoints.length === 0) return;
+    /*
+    console.log(
+      "Pushing into world.edits:",
+      JSON.stringify(pendingPoints, null, 2)
+    );
+    
+    world.edits.push(
+      ...pendingPoints.map((point) => ({
         uv: { x: point.uv.x, y: point.uv.y },
-        position: { x: point.position.x, y: point.position.y, z: point.position.z },
-        strength: point.strength
+        strength: point.strength,
+      }))
+    );
+  */
+    for (const point of pendingPoints) {
+      world.edits.push({
+        uv: { x: point.uv.x, y: point.uv.y },
+        strength: point.strength,
       });
-    });
-*/
-
-    planetEdits?.push(...pendingPoints.map(point => ({ 
-      ...
-      {
-        uv: { x: point.uv.x, y: point.uv.y },
-        strength: point.strength
-      }
-     })));
-
+    }
+    setPendingPoints([]);
   }, [pendingPoints]);
 
 
-  const renderedSamplesRef = useRef(new Set<string>());
-    
-  // Render the scene
-  useFrame(() => {
-  
-    if (lightRef.current) {
-      // Update light camera position to match directional light
-      lightRef.current.position.set(0, 0, -10);
-      lightCamera.position.copy(lightRef.current.position);
-      lightCamera.lookAt(0, 0, 0);
-      lightCamera.updateMatrixWorld(true);
-    }
+  const renderedCountRef = useRef(0); 
+  const hasNotifiedDone = useRef(false);
+  const BATCH_SIZE = 5;
 
-    universalMaterialUniforms.uPlayerColor.value = playerColor;
-    universalMaterialUniforms.uTime.value = clock.getElapsedTime();
-    universalMaterialUniforms.uEyePos.value = camera.position;
-    universalMaterialUniforms.uHeightmap.value = activeHeightmap.texture;
-    universalMaterialUniforms.uShadowMap.value = shadowMap.depthTexture;
-    universalMaterialUniforms.uHoverUV.value = hoverUV;
-    universalMaterialUniforms.uLightMatrix.value.multiplyMatrices(
-      lightCamera.projectionMatrix,
-      lightCamera.matrixWorldInverse,
-    );
+  useFrame(() => {
+    if (!camera || !gl || !quadScene || !quadCamera || !world?.edits) return;
+  
 
     // Render the scene from the light's perspective into the shadow map
     gl.setRenderTarget(shadowMap);
     gl.clear(true, true, true);
     gl.render(scene, lightCamera);
     gl.setRenderTarget(null);
-
+    
     handleTerrainEdit();
-
-    if (planetEdits?.length - renderedSamplesRef.current.size > 0) {
-      // Choose the inactive buffer for writing
-      const nextHeightmap = (activeHeightmap === heightmapA ? heightmapB : heightmapA);
-      brushMaterial.uniforms.uHeightmap.value = activeHeightmap.texture;
-      gl.setRenderTarget(nextHeightmap);
-      // Local player: Render each point to the heightmap
-
-      /*
-      for (const { uv, position, strength } of pendingPoints) {  
-        brushMaterial.uniforms.uUV.value = uv;
-        brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
-        brushMaterial.uniforms.uBrushPosition.value = position;
-        
-        gl.clear();
-        gl.render(quadScene, quadCamera);
-      }
-      */
-      let count = 0;
-
-      for (const sample of planetEdits) {
-        if (renderedSamplesRef.current.has(sample)) continue;
-        count++;
-        const uv = new THREE.Vector2(sample.uv.x, sample.uv.y);
-        const strength = sample.strength * 0.2;
-
-        brushMaterial.uniforms.uUV.value = uv;
-        brushMaterial.uniforms.uBrushStrength.value = strength * 0.1;
-
-        gl.clear();
-        gl.render(quadScene, quadCamera);
-
-        renderedSamplesRef.current.add(sample);
-      }
-      console.log("Rendered", count, "samples");
   
-      // Swap buffers (nextHeightmap becomes active)
-      setActiveHeightmap(nextHeightmap);
+    // ✅ Step 2: Compute how many samples are unrendered
+    const edits = world?.edits!;
+    const totalEdits = edits.length;
+    const unrenderedCount = totalEdits - renderedCountRef.current;
+  
+    if (unrenderedCount <= 0) return;
+  
+    // ✅ Step 3: Batch render the new ones
 
-      setPendingPoints([]);      
+    const renderStart = totalEdits - unrenderedCount;
+    const renderEnd = Math.min(renderStart + BATCH_SIZE, totalEdits);
+  
+    for (let i = renderStart; i < renderEnd; i++) {
+      const sample = edits[i];
+  
+      const temp = pingHeightmapRef.current;
+      pingHeightmapRef.current = pongHeightmapRef.current;
+      pongHeightmapRef.current = temp;
+  
+      brushMaterial.uniforms.uHeightmap.value = pongHeightmapRef.current.texture;
+      brushMaterial.uniforms.uUV.value = new THREE.Vector2(sample.uv.x, sample.uv.y);
+      brushMaterial.uniforms.uBrushStrength.value = sample.strength * 0.02;
+  
+      gl.setRenderTarget(pingHeightmapRef.current);
+      gl.clear();
+      gl.render(quadScene, quadCamera);
+      gl.setRenderTarget(null);
+  
+      renderedCountRef.current++;
     }
-
-    gl.setRenderTarget(null);
+  
+    // Optional: progress callback
+    const percent = (renderedCountRef.current / totalEdits) * 100;
+    console.log("Percent:", percent);
+    if (onProgress) onProgress(percent);
+  
+    if (
+      renderedCountRef.current >= totalEdits &&
+      !hasNotifiedDone.current
+    ) {
+      hasNotifiedDone.current = true;
+      if (onComplete) onComplete();
+    }
   });
+
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     // Only set drawing to true for left mouse button (button 0)
@@ -364,7 +359,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [gl, activeHeightmap]);
+  }, [gl]);
 
   function openHeightmapInNewTab(renderer: THREE.WebGLRenderer, heightmap: THREE.WebGLRenderTarget) {
     const size = heightmap.width;
@@ -445,7 +440,7 @@ const Planet: React.FC<PlanetProps> = ({ cursorFeedId }) => {
         />
       </mesh>
       { 
-        cursorFeed?.id && Object.values(cursorFeed.perSession).map((cursor: unknown) => { 
+        world?.cursor?.id && Object.values(world?.cursor.perSession).map((cursor: unknown) => { 
           const typedCursor = cursor as { value?: { position: any, color?: any, normal?: any }, tx: { sessionID: string } };
 
           return (

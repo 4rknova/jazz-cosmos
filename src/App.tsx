@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Space from "./components/Space.tsx";
 import { Logo } from "./components/Logo.tsx";
-import { CursorFeed } from "./schema.ts";
+import { World } from "./schema.ts";
 import { ID } from "jazz-tools";
 import CameraPanel from "./components/CameraPanel.tsx";
 
@@ -67,11 +67,11 @@ function App() {
           />
         </div>
       )}
-
+      
       {/* Main App */}
-      {splashStage >= 4 &&  (
-        <main className="w-full h-dvh bg-black ">
-          <Space cursorFeedId={worldId as ID<CursorFeed> } isCameraControlFrozen={isCameraControlFrozen} />
+      {splashStage >= 4 && (
+        <main className="w-full h-dvh bg-black">
+          <Space worldId={worldId as ID<World> } isCameraControlFrozen={isCameraControlFrozen} />
           <div className="absolute top-0 left-0 pt-5pl-5 bg-gray-200 backdrop-blur-sm bg-transparent
            space-y-5 w-60 h-screen flex flex-col items-center justify-top border-r-4 border-primary
             border-opacity-10 border-shadow-lg">

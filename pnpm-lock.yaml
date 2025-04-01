@@ -18,11 +18,11 @@ importers:
         specifier: https://pkg.pr.new/garden-co/jazz/jazz-inspector@156fba66e36ee57eab9d08ae7f44ac55a178df77
         version: https://pkg.pr.new/garden-co/jazz/jazz-inspector@156fba66e36ee57eab9d08ae7f44ac55a178df77(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.6.3)
       jazz-react:
-        specifier: https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77
-        version: https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^0.12.1
+        version: 0.12.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       jazz-tools:
-        specifier: https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77
-        version: https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77
+        specifier: ^0.12.1
+        version: 0.12.1
       qrcode.react:
         specifier: ^4.2.0
         version: 4.2.0(react@19.0.0)
@@ -648,8 +648,14 @@ packages:
   '@types/estree@1.0.7':
     resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
 
+  '@types/image-blob-reduce@4.1.4':
+    resolution: {integrity: sha512-IMG+KVL7iy/g05zaJQFqc+Y0l+SlBVVW3GVKLM+ZkBtENoJSZ5nqIgtSZcs04QJvF+ticYJn9n3ZG427wg7Yhg==}
+
   '@types/offscreencanvas@2019.7.3':
     resolution: {integrity: sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A==}
+
+  '@types/pica@9.0.5':
+    resolution: {integrity: sha512-OSd4905yxFNtRanHuyyQAfC9AkxiYcbhlzP606Gl6rFcYRgq4vdLCZuYKokLQBihgrkNzyPkoeykvJDWcPjaCw==}
 
   '@types/react-dom@19.0.4':
     resolution: {integrity: sha512-4fSQ8vWFkg+TGhePfUzVmat3eC14TXYSsiiDSLI0dVLsrm9gZFABjPy/Qu6TKgl1tq1Bu1yDsuQgY3A3DOjCcg==}
@@ -771,17 +777,17 @@ packages:
     resolution: {integrity: sha512-NIxF55hv4nSqQswkAeiOi1r83xy8JldOFDTWiug55KBu9Jnblncd2U6ViHmYgHf01TPZS77NJBhBMKdWj9HQMQ==}
     engines: {node: '>=8'}
 
-  cojson-storage-indexeddb@https://pkg.pr.new/garden-co/jazz/cojson-storage-indexeddb@156fba66e36ee57eab9d08ae7f44ac55a178df77:
-    resolution: {tarball: https://pkg.pr.new/garden-co/jazz/cojson-storage-indexeddb@156fba66e36ee57eab9d08ae7f44ac55a178df77}
-    version: 0.11.6
+  cojson-storage-indexeddb@0.12.1:
+    resolution: {integrity: sha512-OXHdE0idcXRJoKBkOeigAS/en0i9Yw/1iDyhvpjU0VkhgL6J+JYddtfrCwg/bcGfO7CiBr/Ov/Gp6rGyJlu7rg==}
 
-  cojson-storage@https://pkg.pr.new/garden-co/jazz/cojson-storage@156fba66e36ee57eab9d08ae7f44ac55a178df77:
-    resolution: {tarball: https://pkg.pr.new/garden-co/jazz/cojson-storage@156fba66e36ee57eab9d08ae7f44ac55a178df77}
-    version: 0.11.6
+  cojson-storage@0.12.1:
+    resolution: {integrity: sha512-ZjXR7f4i5YFaVivwgkL35S6qqTetd/aW7ce2CvEezBWlHssEslUg/XyONdMIUwlKznaDFoRiy0voI9EsoftAQA==}
 
-  cojson-transport-ws@https://pkg.pr.new/garden-co/jazz/cojson-transport-ws@156fba66e36ee57eab9d08ae7f44ac55a178df77:
-    resolution: {tarball: https://pkg.pr.new/garden-co/jazz/cojson-transport-ws@156fba66e36ee57eab9d08ae7f44ac55a178df77}
-    version: 0.11.6
+  cojson-transport-ws@0.12.1:
+    resolution: {integrity: sha512-bYD5eUWuwVt8q0/EzW6LT0tYeKL5uZ1HTDwN+Q0Lw71BmGEs5Iz0BKm2bVUxYJCTIA6ctoPYszx+kyIhnWBlRQ==}
+
+  cojson@0.12.1:
+    resolution: {integrity: sha512-Z4xzh2x/V/0Lcq5jQOKvAALc8hTpraUuvd7opzR1ojrMa+BTO/22GyHsMFLOGuopNJduiJ6WGnHizwinAZOpKw==}
 
   cojson@https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77:
     resolution: {tarball: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77}
@@ -933,6 +939,9 @@ packages:
   glsl-noise@0.0.0:
     resolution: {integrity: sha512-b/ZCF6amfAUb7dJM/MxRs7AetQEahYzJ8PtgfrmEdtw6uyGOr+ZSGtgjFm6mfsBkxJ4d2W7kg+Nlqzqvn3Bc0w==}
 
+  glur@1.1.2:
+    resolution: {integrity: sha512-l+8esYHTKOx2G/Aao4lEQ0bnHWg4fWtJbVoZZT9Knxi01pB8C80BR85nONLFwkkQoFRCmXY+BUcGZN3yZ2QsRA==}
+
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
@@ -942,6 +951,9 @@ packages:
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
+
+  image-blob-reduce@4.1.0:
+    resolution: {integrity: sha512-iljleP8Fr7tS1ezrAazWi30abNPYXtBGXb9R9oTZDWObqiKq18AQJGTUb0wkBOtdCZ36/IirkuuAIIHTjBJIjA==}
 
   immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
@@ -988,9 +1000,11 @@ packages:
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
 
-  jazz-browser@https://pkg.pr.new/garden-co/jazz/jazz-browser@156fba66e36ee57eab9d08ae7f44ac55a178df77:
-    resolution: {tarball: https://pkg.pr.new/garden-co/jazz/jazz-browser@156fba66e36ee57eab9d08ae7f44ac55a178df77}
-    version: 0.11.6
+  jazz-browser-media-images@0.12.1:
+    resolution: {integrity: sha512-Pq4nrSjVayjXvJqd15vJ+vZZkkQMYwFIk8kMIiUZeIrXJAQ6qaaDc7Ok71D6rfJJ9tFnJRinv11dI9A/0gqZPQ==}
+
+  jazz-browser@0.12.1:
+    resolution: {integrity: sha512-VMLBakW4P5p9tgtF9cfbZbSSSopsHzFd+9kr2Z40gbK3/cxUMckEfemO1jCZvX3GrCVprFBcq+al7KhCvOkckQ==}
 
   jazz-crypto-rs@0.0.6:
     resolution: {integrity: sha512-+hJM9hPzMjK7Jk9++sUs5mKXlFiCTMDZ2wjO8WsfNpY7RZ+kiYSwkCrKvvvDRHSXPlzoyFQFxrSrXqN0/Fr6Yw==}
@@ -1001,6 +1015,12 @@ packages:
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  jazz-react-core@0.12.1:
+    resolution: {integrity: sha512-JG4wrtm0pycBHgq/ZFvgjnqTx2mMSiPCeYdJuOuOcxeI7ymCUQLsjj/zdquZW5SDGS3Helh4s1PDmEJw5YBCnw==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+
   jazz-react-core@https://pkg.pr.new/garden-co/jazz/jazz-react-core@156fba66e36ee57eab9d08ae7f44ac55a178df77:
     resolution: {tarball: https://pkg.pr.new/garden-co/jazz/jazz-react-core@156fba66e36ee57eab9d08ae7f44ac55a178df77}
     version: 0.11.6
@@ -1008,12 +1028,14 @@ packages:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  jazz-react@https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77:
-    resolution: {tarball: https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77}
-    version: 0.11.6
+  jazz-react@0.12.1:
+    resolution: {integrity: sha512-Y3QOVc42Fv0iUUm2xVbMA0xVVoJd0ZL7xI4YShSiOtwk2s6AU29cHKPHz4HJnkiA2KJ3n45n4bBNnig+UFJxAA==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  jazz-tools@0.12.1:
+    resolution: {integrity: sha512-IbabQ94VE78k4LXvAJrm4jqc6p9WqJ4Pse45XAovKQng2OqVb7MEApXSkWb2pplJaqfpXrl7aron9BW6PyO76w==}
 
   jazz-tools@https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77:
     resolution: {tarball: https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77}
@@ -1090,6 +1112,9 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
+  multimath@2.0.0:
+    resolution: {integrity: sha512-toRx66cAMJ+Ccz7pMIg38xSIrtnbozk0dchXezwQDMgQmbGpfxjtv68H+L00iFL8hxDaVjrmwAFSb3I6bg8Q2g==}
+
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
 
@@ -1134,6 +1159,9 @@ packages:
   path-scurry@1.11.1:
     resolution: {integrity: sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA==}
     engines: {node: '>=16 || 14 >=14.18'}
+
+  pica@9.0.1:
+    resolution: {integrity: sha512-v0U4vY6Z3ztz9b4jBIhCD3WYoecGXCQeCsYep+sXRefViL+mVVoTL+wqzdPeE+GpBFsRUtQZb6dltvAt2UkMtQ==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -1469,6 +1497,9 @@ packages:
 
   webgl-sdf-generator@1.1.1:
     resolution: {integrity: sha512-9Z0JcMTFxeE+b2x1LJTdnaT8rT8aEp7MVxkNwoycNmJWwPdzoXzMh0BjJSh/AEFP+KPYZUli814h8bJZFIZ2jA==}
+
+  webworkify@1.5.0:
+    resolution: {integrity: sha512-AMcUeyXAhbACL8S2hqqdqOLqvJ8ylmIbNwUIqQujRSouf4+eUFaXbG6F1Rbu+srlJMmxQWsiU7mOJi0nMBfM1g==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -1999,7 +2030,13 @@ snapshots:
 
   '@types/estree@1.0.7': {}
 
+  '@types/image-blob-reduce@4.1.4':
+    dependencies:
+      '@types/pica': 9.0.5
+
   '@types/offscreencanvas@2019.7.3': {}
+
+  '@types/pica@9.0.5': {}
 
   '@types/react-dom@19.0.4(@types/react@19.0.12)':
     dependencies:
@@ -2127,19 +2164,30 @@ snapshots:
 
   ci-info@3.9.0: {}
 
-  cojson-storage-indexeddb@https://pkg.pr.new/garden-co/jazz/cojson-storage-indexeddb@156fba66e36ee57eab9d08ae7f44ac55a178df77:
+  cojson-storage-indexeddb@0.12.1:
     dependencies:
-      cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      cojson-storage: https://pkg.pr.new/garden-co/jazz/cojson-storage@156fba66e36ee57eab9d08ae7f44ac55a178df77
+      cojson: 0.12.1
+      cojson-storage: 0.12.1
 
-  cojson-storage@https://pkg.pr.new/garden-co/jazz/cojson-storage@156fba66e36ee57eab9d08ae7f44ac55a178df77:
+  cojson-storage@0.12.1:
     dependencies:
-      cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
+      cojson: 0.12.1
 
-  cojson-transport-ws@https://pkg.pr.new/garden-co/jazz/cojson-transport-ws@156fba66e36ee57eab9d08ae7f44ac55a178df77:
+  cojson-transport-ws@0.12.1:
     dependencies:
-      cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
+      cojson: 0.12.1
       typescript: 5.6.3
+
+  cojson@0.12.1:
+    dependencies:
+      '@noble/ciphers': 0.1.4
+      '@noble/curves': 1.8.1
+      '@noble/hashes': 1.7.1
+      '@opentelemetry/api': 1.9.0
+      '@scure/base': 1.2.1
+      jazz-crypto-rs: 0.0.6
+      neverthrow: 7.2.0
+      queueueue: 4.1.2
 
   cojson@https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77:
     dependencies:
@@ -2294,6 +2342,8 @@ snapshots:
 
   glsl-noise@0.0.0: {}
 
+  glur@1.1.2: {}
+
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
@@ -2301,6 +2351,10 @@ snapshots:
   hls.js@1.5.20: {}
 
   ieee754@1.2.1: {}
+
+  image-blob-reduce@4.1.0:
+    dependencies:
+      pica: 9.0.1
 
   immediate@3.0.6: {}
 
@@ -2343,12 +2397,21 @@ snapshots:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
-  jazz-browser@https://pkg.pr.new/garden-co/jazz/jazz-browser@156fba66e36ee57eab9d08ae7f44ac55a178df77:
+  jazz-browser-media-images@0.12.1:
     dependencies:
-      cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      cojson-storage-indexeddb: https://pkg.pr.new/garden-co/jazz/cojson-storage-indexeddb@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      cojson-transport-ws: https://pkg.pr.new/garden-co/jazz/cojson-transport-ws@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      jazz-tools: https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77
+      '@types/image-blob-reduce': 4.1.4
+      image-blob-reduce: 4.1.0
+      jazz-browser: 0.12.1
+      jazz-tools: 0.12.1
+      pica: 9.0.1
+      typescript: 5.6.3
+
+  jazz-browser@0.12.1:
+    dependencies:
+      cojson: 0.12.1
+      cojson-storage-indexeddb: 0.12.1
+      cojson-transport-ws: 0.12.1
+      jazz-tools: 0.12.1
 
   jazz-crypto-rs@0.0.6: {}
 
@@ -2366,6 +2429,13 @@ snapshots:
       - react-dom
       - typescript
 
+  jazz-react-core@0.12.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      cojson: 0.12.1
+      jazz-tools: 0.12.1
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   jazz-react-core@https://pkg.pr.new/garden-co/jazz/jazz-react-core@156fba66e36ee57eab9d08ae7f44ac55a178df77(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
@@ -2373,15 +2443,22 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  jazz-react@https://pkg.pr.new/garden-co/jazz/jazz-react@156fba66e36ee57eab9d08ae7f44ac55a178df77(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  jazz-react@0.12.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@scure/bip39': 1.5.4
-      cojson: https://pkg.pr.new/garden-co/jazz/cojson@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      jazz-browser: https://pkg.pr.new/garden-co/jazz/jazz-browser@156fba66e36ee57eab9d08ae7f44ac55a178df77
-      jazz-react-core: https://pkg.pr.new/garden-co/jazz/jazz-react-core@156fba66e36ee57eab9d08ae7f44ac55a178df77(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      jazz-tools: https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77
+      cojson: 0.12.1
+      jazz-browser: 0.12.1
+      jazz-browser-media-images: 0.12.1
+      jazz-react-core: 0.12.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      jazz-tools: 0.12.1
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
+
+  jazz-tools@0.12.1:
+    dependencies:
+      '@scure/bip39': 1.5.4
+      cojson: 0.12.1
+      fast-myers-diff: 3.2.0
 
   jazz-tools@https://pkg.pr.new/garden-co/jazz/jazz-tools@156fba66e36ee57eab9d08ae7f44ac55a178df77:
     dependencies:
@@ -2441,6 +2518,11 @@ snapshots:
 
   ms@2.1.3: {}
 
+  multimath@2.0.0:
+    dependencies:
+      glur: 1.1.2
+      object-assign: 4.1.1
+
   mz@2.7.0:
     dependencies:
       any-promise: 1.3.0
@@ -2471,6 +2553,13 @@ snapshots:
     dependencies:
       lru-cache: 10.4.3
       minipass: 7.1.2
+
+  pica@9.0.1:
+    dependencies:
+      glur: 1.1.2
+      multimath: 2.0.0
+      object-assign: 4.1.1
+      webworkify: 1.5.0
 
   picocolors@1.1.1: {}
 
@@ -2788,6 +2877,8 @@ snapshots:
   webgl-constants@1.1.1: {}
 
   webgl-sdf-generator@1.1.1: {}
+
+  webworkify@1.5.0: {}
 
   which@2.0.2:
     dependencies:

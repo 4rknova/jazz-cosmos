@@ -5,20 +5,20 @@ import Stars from "./Stars";
 import Planet from "./Planet";
 import { CameraController } from "./CameraController";
 import { ID } from "jazz-tools";
-import { CursorFeed } from "../schema";
+import { World } from "../schema";
 import { useRef, useEffect } from "react";
 import ReactDOMClient from "react-dom/client";
 import InfoPanel from "./InfoPanel";
 import { spheremapImages } from "../utils";
 
 type WorldProps = {
-  cursorFeedId?: ID<CursorFeed> | null;
+  worldId?: ID<World> | null;
   isCameraControlFrozen: boolean;
 };
 
-export default function Space({ cursorFeedId, isCameraControlFrozen }: WorldProps) {
+export default function Space({ worldId, isCameraControlFrozen }: WorldProps) {
   const defaultCameraPosition = {x: 5, y: 0, z: -5};
-  const { me } = useAccount();
+  const { me } = useAccount({resolve: true});
   
   // Function to handle camera position changes
   const handleCameraChange = (position: {
@@ -35,19 +35,19 @@ export default function Space({ cursorFeedId, isCameraControlFrozen }: WorldProp
     }
   };
  
-  const cursorFeedID = cursorFeedId ?? me?.profile?.world?.cursor?.id;
+  const worldID = worldId ?? me?.profile?.world?.id;
   
   const getWorldURL = () => {
-    if (!cursorFeedID) return;
+    if (!worldID) return;
     const currentURL = new URL(window.location.origin);
-    currentURL.searchParams.set("world", cursorFeedID);
+    currentURL.searchParams.set("world", worldID);
     return currentURL.toString();
   }
 
   const rootRef = useRef<ReactDOMClient.Root | null>(null);
     
   useEffect(() => {
-    if (cursorFeedID) {
+    if (worldID) {
       const cursorFeed = me?.profile?.world?.cursor;
       if (cursorFeed) {
         const root = document.getElementById("world-info-panel");
@@ -59,14 +59,14 @@ export default function Space({ cursorFeedId, isCameraControlFrozen }: WorldProp
           rootRef.current.render(
             <InfoPanel
               worldURL={getWorldURL() ?? ""}
-              cursorFeed={cursorFeed}
+              players={Object.keys(cursorFeed?.perSession  ?? {}).length ?? 0}
               worldName={me?.profile?.world?.name ?? ""}
             />
           );
         }
       }
     }
-  }, [cursorFeedID, me]);``
+  }, [worldID, me]);``
 
   return (
     <Canvas
@@ -107,9 +107,7 @@ export default function Space({ cursorFeedId, isCameraControlFrozen }: WorldProp
       />
 
       <Stars count={250} size={6} minDistance={4} />
-      {cursorFeedID && (
-         <Planet cursorFeedId={cursorFeedID as ID<CursorFeed>} />
-      )}
+      <Planet worldId={worldID as ID<World>} />
       
       <CameraController
         onCameraChange={handleCameraChange}

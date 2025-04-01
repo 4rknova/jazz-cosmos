@@ -1,12 +1,11 @@
 import { QRCodeSVG } from "qrcode.react";
-import { CursorFeed } from "../schema";
 interface InfoPanelProps {
   worldURL: string;
-  cursorFeed: CursorFeed;
+  players: number;
   worldName: string;
 }
 
-const InfoPanel = ({ worldURL, cursorFeed, worldName }: InfoPanelProps) => {
+const InfoPanel = ({ worldURL, players, worldName }: InfoPanelProps) => {
 
   return (
     <>
@@ -18,7 +17,7 @@ const InfoPanel = ({ worldURL, cursorFeed, worldName }: InfoPanelProps) => {
           bgColor="transparent"
           fgColor="#5e7f9b"
         />
-        <p className="text-primary mt-10 font-bold text-sm">PLAYERS: { Object.keys(cursorFeed?.perSession ?? {}).length ?? 0}</p>
+        <p className="text-primary mt-10 font-bold text-sm">PLAYERS: {players}</p>
         <button
             className="w-full bg-gray-900 text-primary py-2 px-4 mt-5 rounded-md hover:text-gray-100 hover:bg-gray-800 transition-colors font-medium"
             onClick={() => {

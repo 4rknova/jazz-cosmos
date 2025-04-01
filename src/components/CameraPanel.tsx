@@ -10,7 +10,7 @@ const CameraPanel = ({ isCameraControlFrozen, setIsCameraControlFrozen }: Camera
             className="w-full bg-gray-900 text-primary py-2 px-4 mt-5 rounded-md hover:text-gray-100 hover:bg-gray-800 transition-colors font-medium"
             onClick={() => setIsCameraControlFrozen(prev => !prev)}
         >
-          {(isCameraControlFrozen ? "Unfreeze"  : "Freeze") + " Camera"}
+          {(isCameraControlFrozen ? "Unlock"  : "Lock") + " Camera"}
         </button>
       </>
     );
