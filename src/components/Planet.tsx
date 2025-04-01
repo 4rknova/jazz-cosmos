@@ -36,20 +36,20 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
     depthBuffer: true,
   });
 
-  const heightmapA = useFBO(heightMapSize, heightMapSize, {
+  const heightmapA = useFBO(heightMapSize, 0.5 * heightMapSize, {
     format: THREE.RGBAFormat,
     type: THREE.FloatType,
-    generateMipmaps: true, // Enables mipmaps
-    minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+    generateMipmaps: false, // Enables mipmaps
+    minFilter: THREE.LinearFilter, // Use mipmaps when downscaling
     magFilter: THREE.LinearFilter, // Default for upscaling
     wrapS: THREE.RepeatWrapping, // Optional wrapping modes
     wrapT: THREE.RepeatWrapping,
   });
-  const heightmapB = useFBO(heightMapSize, heightMapSize, {
+  const heightmapB = useFBO(heightMapSize, 0.5 * heightMapSize, {
     format: THREE.RGBAFormat,
     type: THREE.FloatType,
-    generateMipmaps: true, // Enables mipmaps
-    minFilter: THREE.LinearMipmapLinearFilter, // Use mipmaps when downscaling
+    generateMipmaps: false, // Enables mipmaps
+    minFilter: THREE.LinearFilter, // Use mipmaps when downscaling
     magFilter: THREE.LinearFilter, // Default for upscaling
     wrapS: THREE.RepeatWrapping, // Optional wrapping modes
     wrapT: THREE.RepeatWrapping,
@@ -343,8 +343,11 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
         e.preventDefault(); // optional: prevent browser default behavior
 
         // Call with multiple render targets
-        openRenderTargetsInNewTab(gl, [heightmapA, heightmapB, shadowMap]);
-        
+        openRenderTargetsInNewTab(gl, [
+          { label: "Height Map A", value: heightmapA},
+          { label: "Height Map B", value: heightmapB},
+          { label: "Shadow Map", value: shadowMap},
+        ]);
       }
     };
 

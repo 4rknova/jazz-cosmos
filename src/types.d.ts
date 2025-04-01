@@ -36,9 +36,9 @@ export type Camera = {
 
 export interface RemoteCursor {
   value?: {
-    position?: { x: number; y: number; z: number };
-    normal?: { x: number; y: number; z: number };
-    color?: { r: number; g: number; b: number };
+    position?: Vec3;
+    normal?: Vec3;
+    color?: ColorRGB;
   };
   tx: {
     sessionID: string;
