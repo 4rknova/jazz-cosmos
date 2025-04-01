@@ -33,3 +33,14 @@ export type TerrainSample = {
 export type Camera = {
   position: Vec3;
 };
+
+export interface RemoteCursor {
+  value?: {
+    position?: { x: number; y: number; z: number };
+    normal?: { x: number; y: number; z: number };
+    color?: { r: number; g: number; b: number };
+  };
+  tx: {
+    sessionID: string;
+  };
+}

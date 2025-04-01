@@ -11,6 +11,8 @@ import brushVertexShader from "../shaders/brushVertex.glsl";
 import planetFragmentShader from "../shaders/planetFragment.glsl";
 import planetVertexShader from "../shaders/planetVertex.glsl";
 import Cursor from "./Cursor";
+import { openRenderTargetsInNewTab } from "../gfxutils";
+import { RemoteCursor } from "../types";
 
 interface PlanetProps {  
   worldId: ID<World>;
@@ -53,6 +55,7 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
     wrapT: THREE.RepeatWrapping,
   });
   
+  
   const pingHeightmapRef = useRef(heightmapA);
   const pongHeightmapRef = useRef(heightmapB);
 
@@ -76,8 +79,7 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
 
   const isDrawingRef = useRef(false);
   const [pendingPoints, setPendingPoints] = useState<
-    { uv: THREE.Vector2; strength: number }[]
-  >([]);
+  { uv: { x: number; y: number }; strength: number }[]>([]);
 
   // Shadow camera setup
   const ambientLightRef = useRef<number>(0.01);
@@ -241,29 +243,17 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
       if (uv) {
         const strength = isShiftKeyPressed.current ? -1 : 1;
         // Append new point to the list
-        setPendingPoints((prevPoints) => [...prevPoints, { uv, strength }]);
+        setPendingPoints((prevPoints) => [...prevPoints, { uv: { x: uv.x, y: uv.y }, strength }]);
       }
     }
   };
 
   useEffect(() => {
     if (!world?.edits || pendingPoints.length === 0) return;
-    /*
-    console.log(
-      "Pushing into world.edits:",
-      JSON.stringify(pendingPoints, null, 2)
-    );
-    
-    world.edits.push(
-      ...pendingPoints.map((point) => ({
-        uv: { x: point.uv.x, y: point.uv.y },
-        strength: point.strength,
-      }))
-    );
-  */
+
     for (const point of pendingPoints) {
       world.edits.push({
-        uv: { x: point.uv.x, y: point.uv.y },
+        uv: point.uv,
         strength: point.strength,
       });
     }
@@ -320,7 +310,6 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
   
     // Optional: progress callback
     const percent = (renderedCountRef.current / totalEdits) * 100;
-    console.log("Percent:", percent);
     if (onProgress) onProgress(percent);
   
     if (
@@ -352,8 +341,10 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
       // Check for Ctrl + H
       if (e.ctrlKey && e.key.toLowerCase() === "h") {
         e.preventDefault(); // optional: prevent browser default behavior
-        openHeightmapInNewTab(gl, heightmapA);
-        openHeightmapInNewTab(gl, heightmapB);
+
+        // Call with multiple render targets
+        openRenderTargetsInNewTab(gl, [heightmapA, heightmapB, shadowMap]);
+        
       }
     };
 
@@ -361,67 +352,6 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gl]);
 
-  function openHeightmapInNewTab(renderer: THREE.WebGLRenderer, heightmap: THREE.WebGLRenderTarget) {
-    const size = heightmap.width;
-    const pixelBuffer = new Float32Array(size * size * 4); // RGBA float data
-  
-    // Make sure float read support is enabled
-    if (!renderer.capabilities.isWebGL2 && !renderer.extensions.get("OES_texture_float")) {
-      alert("Float textures not supported on this device.");
-      return;
-    }
-  
-    renderer.setRenderTarget(heightmap);
-    renderer.readRenderTargetPixels(heightmap, 0, 0, size, size, pixelBuffer);
-    renderer.setRenderTarget(null);
-  
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    const imageData = ctx.createImageData(size, size);
-  
-    // Find min/max to normalize values between 0 and 255 for display
-    let min = Infinity;
-    let max = -Infinity;
-    for (let i = 0; i < pixelBuffer.length; i += 4) {
-      const value = pixelBuffer[i]; // Use R channel
-      if (value < min) min = value;
-      if (value > max) max = value;
-    }
-  
-    const range = max - min || 1; // Avoid division by zero
-  
-    for (let i = 0; i < pixelBuffer.length; i += 4) {
-      const floatVal = pixelBuffer[i]; // Use only the red channel
-      const normalized = ((floatVal - min) / range) * 255;
-      const byteVal = Math.max(0, Math.min(255, normalized));
-  
-      imageData.data[i] = byteVal;     // R
-      imageData.data[i + 1] = byteVal; // G
-      imageData.data[i + 2] = byteVal; // B
-      imageData.data[i + 3] = 255;     // A
-    }
-  
-    ctx.putImageData(imageData, 0, 0);
-    const dataURL = canvas.toDataURL();
-  
-    // Open in new tab
-    const newTab = window.open();
-    if (newTab) {
-      newTab.document.write(`
-        <html>
-          <head><title>Float Heightmap Preview</title></head>
-          <body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
-            <img src="${dataURL}" style="max-width:100%; max-height:100%;" />
-          </body>
-        </html>
-      `);
-      newTab.document.close();
-    } else {
-      alert("Popup blocked. Please allow popups to view the heightmap.");
-    }
-  }
   
   return (
     <group>
@@ -439,19 +369,14 @@ const Planet: React.FC<PlanetProps> = ({ worldId: worldId, onProgress, onComplet
           vertexShader={planetVertexShader}
         />
       </mesh>
-      { 
-        world?.cursor?.id && Object.values(world?.cursor.perSession).map((cursor: unknown) => { 
-          const typedCursor = cursor as { value?: { position: any, color?: any, normal?: any }, tx: { sessionID: string } };
-
-          return (
-            <Cursor 
-              key={typedCursor.tx.sessionID} 
-              position={typedCursor.value?.position} 
-              normal={typedCursor.value?.normal} 
-              color={typedCursor.value?.color} 
-            />
-          )
-        })
+      {world?.cursor?.id && Object.values(world.cursor.perSession).map((cursor: RemoteCursor) => (
+        <Cursor 
+          key={cursor.tx.sessionID}
+          position={cursor.value?.position ?? { x: 0, y: 0, z: 0 }}
+          normal={cursor.value?.normal ?? { x: 0, y: 0, z: 0 }}
+          color={cursor.value?.color ?? { r: 0, g: 0, b: 0 }}
+        />
+        ))
       }
 
     </group>

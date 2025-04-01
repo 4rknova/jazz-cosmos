@@ -107,7 +107,10 @@ export default function Space({ worldId, isCameraControlFrozen }: WorldProps) {
       />
 
       <Stars count={250} size={6} minDistance={4} />
-      <Planet worldId={worldID as ID<World>} />
+      <Planet worldId={worldID as ID<World>}
+      //  onProgress={(percent) => setRenderProgress(percent)}
+      //  onComplete={() => setTerrainComplete(true)}
+      />
       
       <CameraController
         onCameraChange={handleCameraChange}
